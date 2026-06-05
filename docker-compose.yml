@@ -1,0 +1,19 @@
+services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-cinema-local
+    restart: always
+    environment:
+      MYSQL_DATABASE: cinema
+      MYSQL_ROOT_PASSWORD: 1607
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+
+  redis-music:
+    image: redis:alpine
+    container_name: redis-cinema-local
+    restart: always
+    ports:
+      - "6379:6379"

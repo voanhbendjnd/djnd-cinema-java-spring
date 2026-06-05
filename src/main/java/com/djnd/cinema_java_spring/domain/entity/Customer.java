@@ -1,0 +1,38 @@
+package com.djnd.cinema_java_spring.domain.entity;
+
+import java.time.Instant;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "customers")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class Customer {
+    @Id
+    Long userId;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @MapsId
+    User user;
+    Instant dateOfBirth;
+    @Column(name = "address", length = 500)
+    String address;
+    @Column(name = "identity_card", length = 20)
+    String identityCard;
+}
