@@ -7,7 +7,7 @@ import java.time.Instant;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 
-import com.djnd.cinema_java_spring.config.constants.Constants;
+import com.djnd.cinema_java_spring.config.Constants;
 import com.djnd.cinema_java_spring.domain.enumeration.LoginWith;
 import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -75,6 +75,9 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
     @Enumerated(EnumType.STRING)
     @Column(name = "login_with", nullable = false)
     LoginWith loginWith;
+    @Size(min = 2, max = 10)
+    @Column(name = "lang_key", length = 10)
+    private String langKey;
     @NotNull
     @Builder.Default
     @Column(name = "activated", nullable = false)
@@ -95,6 +98,7 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
     Role role;
     String sessionId;
     @Column(columnDefinition = "MEDIUMTEXT")
+    @JsonIgnore
     String refreshToken;
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     Customer customer;

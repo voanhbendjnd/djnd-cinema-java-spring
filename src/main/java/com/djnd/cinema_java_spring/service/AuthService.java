@@ -1,14 +1,20 @@
 package com.djnd.cinema_java_spring.service;
 
+import java.util.Date;
+
+import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.ResLoginDTO;
+import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
+import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
+import io.jsonwebtoken.Claims;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -24,7 +30,7 @@ public class AuthService {
     private Long expiresIn;
 
     @Transactional
-    public ResLoginDTO generateResLoginDTO(User user) {
+    public ResLoginDTO generateResLoginDTO(UserSecurityCacheDTO user) {
         var res = new ResLoginDTO();
         var userLogin = new ResLoginDTO.UserLogin();
         userLogin.setLogin(user.getLogin());
@@ -33,14 +39,17 @@ public class AuthService {
 
         }
         userLogin.setName(user.getName());
-        userLogin.setRole(user.getRole().getName());
+        userLogin.setRole(user.getName());
         userLogin.setLoginWith(user.getLoginWith());
         res.setUser(userLogin);
-        String sessionId = sessionManager.createNewSession(user);
-        String accessToken = securityUtils.createAccessToken(user.getLogin(), res, sessionId, user.getRole());
+        String sessionId = sessionManager.createNewSession(user.getId());
+        String accessToken = securityUtils.createAccessToken(user.getLogin(), res, sessionId, user.getPermissions());
         res.setAccessToken(accessToken);
         var newRefreshToken = this.securityUtils.createRefreshToken(user.getLogin(), res);
-        user.setRefreshToken(newRefreshToken);
+        int updated = userRepository.updateRefreshTokenById(user.getId(), newRefreshToken);
+        if (updated <= 0) {
+            throw new ResourceNotFoundException("User not found!");
+        }
         res.setExpiresIn(expiresIn);
         return res;
 
@@ -48,5 +57,28 @@ public class AuthService {
 
     public String getRefreshTokenByUserId(Long userId) {
         return userRepository.getRefreshTokenById(userId);
+    }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        Claims claims = this.securityUtils.parseRefreshTokenIgnoreExpired(refreshToken);
+        var username = claims.getSubject();
+        if (username == null) {
+            throw new BadCredentialsException("Login not found!");
+        }
+        if (new EmailValidator().isValid(username, null)) {
+            var updated = userRepository.resetRefreshTokenByEmail(username);
+            if (updated <= 0) {
+                throw new ResourceNotFoundException("User not found!");
+            }
+        } else {
+            var updated = userRepository.resetRefreshTokenByLogin(username);
+            if (updated <= 0) {
+                throw new ResourceNotFoundException("User not found!");
+            }
+
+        }
+        sessionManager.invalidateSession(username);
+
     }
 }

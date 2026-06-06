@@ -3,13 +3,18 @@ package com.djnd.cinema_java_spring.service;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.djnd.cinema_java_spring.config.Constants;
+import com.djnd.cinema_java_spring.domain.entity.Permission;
 import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.domain.enumeration.LoginWith;
@@ -17,8 +22,9 @@ import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 import com.djnd.cinema_java_spring.repository.RoleRepository;
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
-import com.djnd.cinema_java_spring.util.exception.ResourceNotFoundException;
-import com.djnd.cinema_java_spring.util.exception.UsernameAlreadyUsedException;
+import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
+import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
+import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,10 +36,10 @@ import tech.jhipster.security.RandomUtil;
 @RequiredArgsConstructor
 @Transactional
 public class UserService {
-    UserRepository userRepository;
-    CacheManager cacheManager;
-    PasswordEncoder passwordEncoder;
-    RoleRepository roleRepository;
+    final UserRepository userRepository;
+    final CacheManager cacheManager;
+    final PasswordEncoder passwordEncoder;
+    final RoleRepository roleRepository;
 
     public AdminUserDTO registerUser(AdminUserDTO userDTO, String password) {
         userRepository.findOneByLogin(userDTO.getLogin().toLowerCase()).ifPresent(existingUser -> {
@@ -55,9 +61,6 @@ public class UserService {
         UserGender gender = UserGender.valueOf(userDTO.getGender());
         Role role = this.roleRepository.findById(userDTO.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found!"));
-        // Role role =
-        // roleRepository.findOneByNameIgnoreCase(AuthoritiesConstants.CUSTOMER)
-        // .orElseThrow(() -> new ResourceNotFoundException("Role not found!"));
         User newUser = User.builder()
                 .login(userDTO.getLogin().toLowerCase())
                 .password(encryptedPassword)
@@ -67,6 +70,7 @@ public class UserService {
                 .activationKey(RandomUtil.generateActivationKey())
                 .phone(userDTO.getPhone())
                 .loginWith(LoginWith.SYSTEM)
+                .langKey(userDTO.getLangKey() != null ? userDTO.getLangKey() : Constants.DEFAULT_LANGUAGE)
                 .role(role)
                 .build();
         userRepository.save(newUser);
@@ -81,12 +85,14 @@ public class UserService {
         userDTO.setLogin(user.getLogin());
         userDTO.setName(user.getName());
         userDTO.setPhone(user.getPhone());
+        userDTO.setLangKey(user.getLangKey());
         userDTO.setId(user.getId());
         userDTO.setCreatedBy(user.getCreatedBy());
         userDTO.setCreatedDate(user.getCreatedDate());
         userDTO.setLastModifiedBy(user.getLastModifiedBy());
         userDTO.setLastModifiedDate(user.getLastModifiedDate());
         userDTO.setLoginWith(user.getLoginWith());
+        userDTO.setActivationKey(user.getActivationKey());
         return userDTO;
 
     }
@@ -128,5 +134,33 @@ public class UserService {
         this.userRepository.flush();
         this.clearUserCaches(existingUser);
         return true;
+    }
+
+    @Cacheable(cacheNames = UserRepository.USERS_BY_LOGIN_CACHE, unless = "#result == null")
+    public Optional<UserSecurityCacheDTO> getSecurityCacheByLogin(String login) {
+        return userRepository.findOneWithAuthoritiesByLogin(login.toLowerCase()).map(this::getSecurityCache);
+    }
+
+    @Cacheable(cacheNames = UserRepository.USERS_BY_EMAIL_CACHE, unless = "#result == null")
+    public Optional<UserSecurityCacheDTO> getSecurityCacheByEmail(String email) {
+        return userRepository.findOneWithAuthoritiesByEmail(email.toLowerCase()).map(this::getSecurityCache);
+
+    }
+
+    public UserSecurityCacheDTO getSecurityCache(User user) {
+        var res = new UserSecurityCacheDTO();
+        res.setEmail(user.getEmail());
+        res.setLogin(user.getLogin());
+        res.setActivated(user.isActivated());
+        res.setGender(user.getGender());
+        res.setPassword(user.getPassword());
+        res.setLoginWith(user.getLoginWith());
+        res.setLangKey(user.getLangKey());
+        res.setName(user.getName());
+        res.setId(user.getId());
+        res.setRole(user.getRole().getName());
+        res.setPermissions(
+                user.getRole().getPermissions().stream().map(Permission::getName).collect(Collectors.toSet()));
+        return res;
     }
 }

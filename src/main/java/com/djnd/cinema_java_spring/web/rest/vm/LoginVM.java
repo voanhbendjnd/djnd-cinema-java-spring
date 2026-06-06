@@ -1,4 +1,4 @@
-package com.djnd.cinema_java_spring.service.dto;
+package com.djnd.cinema_java_spring.web.rest.vm;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 @Getter
 @Setter
-public class ReqLoginDTO {
+public class LoginVM {
     @NotBlank(message = "Login null")
     String login;
     @NotBlank(message = "Password null")

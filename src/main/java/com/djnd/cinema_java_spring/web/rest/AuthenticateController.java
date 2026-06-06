@@ -1,4 +1,4 @@
-package com.djnd.cinema_java_spring.controller;
+package com.djnd.cinema_java_spring.web.rest;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -9,17 +9,19 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.djnd.cinema_java_spring.config.CustomUserDetails;
+import com.djnd.cinema_java_spring.config.Constants;
+import com.djnd.cinema_java_spring.security.CustomUserDetails;
 import com.djnd.cinema_java_spring.service.AuthService;
-import com.djnd.cinema_java_spring.service.dto.ReqLoginDTO;
 import com.djnd.cinema_java_spring.service.dto.ResLoginDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
-import com.djnd.cinema_java_spring.util.exception.RequestInvalidException;
+import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
+import com.djnd.cinema_java_spring.web.rest.vm.LoginVM;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +31,7 @@ import lombok.experimental.FieldDefaults;
 @RequestMapping("/api/v1/auth")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
-public class AuthControllerV1 {
+public class AuthenticateController {
     final AuthenticationManagerBuilder authenticationManagerBuilder;
     final AuthService authService;
     @Value("${djnd.jwt.refresh-token-validity-in-seconds}")
@@ -37,8 +39,8 @@ public class AuthControllerV1 {
 
     @PostMapping("/login")
     @ApiMessage("Login with credentials")
-    public ResponseEntity<ResLoginDTO> loginCredentials(@RequestBody ReqLoginDTO dto) {
-        var usernamePassowrdAuthenticationToken = new UsernamePasswordAuthenticationToken(dto.getLogin(),
+    public ResponseEntity<ResLoginDTO> loginCredentials(@RequestBody LoginVM dto) {
+        var usernamePassowrdAuthenticationToken = new UsernamePasswordAuthenticationToken(dto.getLogin().toLowerCase(),
                 dto.getPassword());
         try {
             Authentication auth = authenticationManagerBuilder.getObject()
@@ -59,5 +61,16 @@ public class AuthControllerV1 {
             throw new RequestInvalidException("Login or password incorrect!");
         }
 
+    }
+
+    @PostMapping("/logout")
+    @ApiMessage("Logout")
+    public ResponseEntity<String> logout(
+            @CookieValue(name = "refresh_token", defaultValue = Constants.REFRESH_TOKEN_EXPIRED) String refreshToken) {
+        if (refreshToken.equals(Constants.REFRESH_TOKEN_EXPIRED)) {
+            throw new BadCredentialsException("Refresh token invalid!");
+        }
+        authService.logout(refreshToken);
+        return ResponseEntity.ok("Logout success");
     }
 }

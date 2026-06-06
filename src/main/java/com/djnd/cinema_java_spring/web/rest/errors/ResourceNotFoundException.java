@@ -1,4 +1,4 @@
-package com.djnd.cinema_java_spring.util.exception;
+package com.djnd.cinema_java_spring.web.rest.errors;
 
 import java.io.Serial;
 

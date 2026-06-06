@@ -1,6 +1,7 @@
 package com.djnd.cinema_java_spring.service.dto;
 
 import com.djnd.cinema_java_spring.domain.enumeration.LoginWith;
+import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,8 @@ public class ResLoginDTO {
         String role;
         LoginWith loginWith;
         String login;
+        Boolean activated;
+        UserGender gender;
     }
 
     @Getter

@@ -2,7 +2,6 @@ package com.djnd.cinema_java_spring.config;
 
 import java.io.IOException;
 
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -17,9 +16,9 @@ import jakarta.servlet.http.HttpServletResponse;
  * request đến protected API với invalid token -> 401 redirect
  * info
  *
- * not: Public APIs (books, categories) đã được whitelist trong
- * securityConfig
- * nên sẽ không bao giờ đến đây
+ * not: if does endpoints exists đã được
+ * whitelist trong securityConfig
+ * (handle enpoint not allow and if not login)
  * kích hoạt khi jwt hết hạn hoặc không có
  */
 @Component
@@ -30,29 +29,16 @@ public class SmartAuthenticationEntryPoint implements
     public void commence(HttpServletRequest request, HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
 
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        if (authException instanceof BadCredentialsException) {
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-            String errorPassword = """
-                    {
-                    "error": "Bad Request",
-                    "message": "Login or password incorrect!",
-                    "code": "BAD_CREDENTIALS",
-                    "redirect": false
-                    }
-                    """;
-            response.getWriter().write(errorPassword);
-            return;
-        }
-
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         String errorMessage = """
                 {
                 "error": "Unauthorized",
                 "message": "(session expired) Please login to access this resource",
                 "code": "UNAUTHORIZED",
+                "publicApi": false,
                 "redirect": true,
                 "redirectUrl": "/login"
                 }

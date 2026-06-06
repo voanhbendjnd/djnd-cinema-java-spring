@@ -4,7 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.Instant;
 
-import com.djnd.cinema_java_spring.config.constants.Constants;
+import com.djnd.cinema_java_spring.config.Constants;
 import com.djnd.cinema_java_spring.domain.enumeration.LoginWith;
 
 import jakarta.validation.constraints.Email;
@@ -25,7 +25,7 @@ public class AdminUserDTO implements Serializable {
     private static final long serialVersionUID = 1L;
     Long id;
     @NotBlank(message = "Login null")
-    @Pattern(regexp = Constants.LOGIN_REGEX)
+    @Pattern(regexp = Constants.LOGIN_REGEX, message = "Login invalid!")
     @Size(min = 1, max = 50)
     String login;
     @Size(min = 2, max = 100)
@@ -33,10 +33,13 @@ public class AdminUserDTO implements Serializable {
     String gender;
     @Email
     String email;
-    @Pattern(regexp = Constants.PHONE_REGEX)
+    @Pattern(regexp = Constants.PHONE_REGEX, message = "Phone invalid format!")
     String phone;
     @NotNull(message = "Role null")
     Integer roleId;
+    String activationKey;
+    @Size(min = 2, max = 10)
+    String langKey;
     boolean activated = false;
     Instant createdDate, lastModifiedDate;
     String createdBy, lastModifiedBy;

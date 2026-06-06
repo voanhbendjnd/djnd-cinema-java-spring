@@ -7,7 +7,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.djnd.cinema_java_spring.config.constants.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.domain.entity.Permission;
 import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.domain.entity.User;
@@ -17,7 +16,8 @@ import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 import com.djnd.cinema_java_spring.repository.PermissionRepository;
 import com.djnd.cinema_java_spring.repository.RoleRepository;
 import com.djnd.cinema_java_spring.repository.UserRepository;
-import com.djnd.cinema_java_spring.util.exception.ResourceNotFoundException;
+import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
+import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

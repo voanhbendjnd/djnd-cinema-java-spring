@@ -1,4 +1,6 @@
-package com.djnd.cinema_java_spring.service.dto;
+package com.djnd.cinema_java_spring.web.rest.vm;
+
+import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -10,7 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter
-public class RegisterUserDTO extends AdminUserDTO {
+public class ManagedUserVM extends AdminUserDTO {
     @NotBlank(message = "Passowrd null!")
     @Size(min = 4, max = 100, message = "Lenght password min 4 characters max 100 characters")
     String password;

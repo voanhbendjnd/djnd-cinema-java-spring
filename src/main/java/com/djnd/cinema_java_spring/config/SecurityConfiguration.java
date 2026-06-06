@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -32,6 +33,8 @@ import com.nimbusds.jose.util.Base64;
 @EnableWebSecurity
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfiguration {
+
+    private static final String VERSION_API = "/api/v1";
     @Value("${djnd.jwt.base64-secret}")
     private String jwtKey;
 
@@ -51,7 +54,6 @@ public class SecurityConfiguration {
                 "/**",
                 "/storage/**",
                 "/api/v1/search/**",
-                "/api/v1/auth/**",
                 "/ws/**",
 
         };
@@ -60,6 +62,8 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         auth -> auth
+                                .requestMatchers(HttpMethod.POST, VERSION_API + "/account/register").permitAll()
+                                .requestMatchers(HttpMethod.POST, VERSION_API + "/auth/login").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments/{id}").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments").permitAll()

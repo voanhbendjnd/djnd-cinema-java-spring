@@ -1,7 +1,5 @@
 package com.djnd.cinema_java_spring.security;
 
-import com.djnd.cinema_java_spring.domain.entity.Permission;
-import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.service.dto.ResLoginDTO;
 import com.nimbusds.jose.util.Base64;
 import io.jsonwebtoken.Claims;
@@ -10,11 +8,9 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Set;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
@@ -53,20 +49,15 @@ public class SecurityUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String createAccessToken(String login, ResLoginDTO dto, String sessionId, Role role) {
+    public String createAccessToken(String login, ResLoginDTO dto, String sessionId, Set<String> permissions) {
         ResLoginDTO.UserInsideToken userToken = new ResLoginDTO.UserInsideToken();
         userToken.setId(dto.getUser().getId());
         userToken.setLogin(login);
         userToken.setName(dto.getUser().getName());
         Instant now = Instant.now();
         Instant validity = now.plus(this.accessTokenExpiration, ChronoUnit.SECONDS);
-        List<String> listAuthority = new ArrayList<>();
-        if (role != null) {
-            listAuthority = role.getPermissions().stream().map(Permission::getName).collect(Collectors.toList());
-        }
-
         JwtClaimsSet claim = JwtClaimsSet.builder().issuedAt(now).expiresAt(validity).subject(login)
-                .claim("user", userToken).claim("permission", listAuthority).claim("sessionId", sessionId).build();
+                .claim("user", userToken).claim("permission", permissions).claim("sessionId", sessionId).build();
         JwsHeader jwtHeader = JwsHeader.with(JWT_ALGORITHM).build();
         return this.jwtEncoder.encode(JwtEncoderParameters.from(jwtHeader, claim)).getTokenValue();
     }

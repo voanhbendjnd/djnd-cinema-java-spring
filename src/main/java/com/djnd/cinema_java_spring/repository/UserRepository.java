@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -47,6 +48,26 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query(value = "update User u set u.refreshToken = :refreshToken where u.id = :userId")
     int updateRefreshTokenById(@Param("userId") Long userId, @Param("refreshToken") String token);
 
+    @Modifying
+    @Query(value = "update User u set u.refreshToken = null where u.email = :email")
+    @CacheEvict(cacheNames = USERS_BY_EMAIL_CACHE)
+    int resetRefreshTokenByEmail(@Param("email") String email);
+
+    @Modifying
+    @Query(value = "update User u set u.refreshToken = null where u.login = :login")
+    @CacheEvict(cacheNames = USERS_BY_LOGIN_CACHE)
+    int resetRefreshTokenByLogin(@Param("login") String login);
+
     @Query(value = "select u.refreshToken from User u where u.id = :userId")
     String getRefreshTokenById(@Param("userId") Long userId);
+
+    @Query(value = "select u from User u left join fetch u.role r left join fetch r.permissions p where u.email = :email")
+    Optional<User> findOneWithAuthoritiesByEmail(@Param("email") String email);
+
+    @Query(value = "select u from User u left join fetch u.role r left join fetch r.permissions p where u.login = :login")
+    Optional<User> findOneWithAuthoritiesByLogin(@Param("login") String login);
+
+    @Modifying
+    @Query(value = "update User u set u.sessionId = :sessionId where u.id = :userId")
+    int updateSessionById(@Param("userId") Long userId, @Param("sessionId") String sessionId);
 }

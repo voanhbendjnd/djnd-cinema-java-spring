@@ -1,4 +1,4 @@
-package com.djnd.cinema_java_spring.config.constants;
+package com.djnd.cinema_java_spring.security;
 
 public final class AuthoritiesConstants {
     public static final String ADMIN = "ROLE_ADMIN";

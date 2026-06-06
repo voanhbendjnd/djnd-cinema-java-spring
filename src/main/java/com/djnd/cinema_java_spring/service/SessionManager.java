@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.repository.UserRepository;
-import com.djnd.cinema_java_spring.util.exception.ResourceNotFoundException;
+import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +21,14 @@ public class SessionManager {
     final UserRepository userRepository;
     final CacheManager cacheManager;
 
-    public String createNewSession(User user) {
+    public String createNewSession(Long userId) {
         String newSessionId = UUID.randomUUID().toString();
+        int updated = userRepository.updateSessionById(userId, newSessionId);
+        if (updated > 0) {
+            return newSessionId;
 
-        user.setSessionId(newSessionId);
-        userRepository.save(user);
-        return newSessionId;
+        }
+        throw new ResourceNotFoundException("User not found!");
     }
 
     public User getUserByLogin(String login) {

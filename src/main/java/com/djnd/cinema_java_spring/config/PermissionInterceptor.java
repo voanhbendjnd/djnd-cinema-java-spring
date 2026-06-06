@@ -6,8 +6,8 @@ import org.springframework.web.servlet.HandlerMapping;
 
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
-import com.djnd.cinema_java_spring.util.exception.UnauthorizedException;
-import com.djnd.cinema_java_spring.util.exception.UserAccessDeniedException;
+import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
+import com.djnd.cinema_java_spring.web.rest.errors.UserAccessDeniedException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

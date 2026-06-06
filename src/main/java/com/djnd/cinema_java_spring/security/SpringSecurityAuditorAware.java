@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.stereotype.Component;
 
-import com.djnd.cinema_java_spring.config.constants.Constants;
+import com.djnd.cinema_java_spring.config.Constants;
 
 @Component
 public class SpringSecurityAuditorAware implements AuditorAware<String> {
