@@ -1,7 +1,5 @@
 package com.djnd.cinema_java_spring.config;
 
-import java.util.Collections;
-
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -34,7 +32,6 @@ import com.nimbusds.jose.util.Base64;
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfiguration {
 
-    private static final String VERSION_API = "/api/v1";
     @Value("${djnd.jwt.base64-secret}")
     private String jwtKey;
 
@@ -47,7 +44,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             SmartAuthenticationEntryPoint sap,
-            @Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfig
+            @Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfig,
+            JwtAuthenticationConverter jwtConverter
     // PublicEndpointFilter publicEndpointFilter
     ) throws Exception {
         String[] whiteList = {
@@ -63,16 +61,22 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         auth -> auth
-                                .requestMatchers(HttpMethod.POST, VERSION_API + "/account/register").permitAll()
-                                .requestMatchers(HttpMethod.POST, VERSION_API + "/auth/login").permitAll()
-                                .requestMatchers(HttpMethod.GET, VERSION_API + "/account/activate/**").permitAll()
+                                .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/account/register")
+                                .permitAll()
+                                .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/login").permitAll()
+                                .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/account/activate/**")
+                                .permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments/{id}").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments").permitAll()
                                 .requestMatchers(whiteList).permitAll()
                                 .anyRequest().authenticated())
+                // check token when fe send request
                 .oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(publicEndpointJwtAuthenticationTokenConverter()))
+                        // decode and check valid expire token -> jwt auth converter get permission ->
+                        // security context
+                        // if token invalid -> sap
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
                         .authenticationEntryPoint(sap))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
@@ -116,19 +120,6 @@ public class SecurityConfiguration {
         jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(customConverter);
 
         return jwtAuthenticationConverter;
-    }
-
-    @Bean
-    public JwtAuthenticationConverter publicEndpointJwtAuthenticationTokenConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            // for public endpoints, we can skip the JWT validation entirely
-            // by returning empty authorities - the permitAll() will handle access
-            return Collections.emptyList();
-        });
-
-        return converter;
     }
 
 }

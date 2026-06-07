@@ -2,7 +2,6 @@ package com.djnd.cinema_java_spring.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -78,6 +77,28 @@ public class UserService {
         return this.toAdminUserDTO(newUser);
     }
 
+    public AdminUserDTO createUser(AdminUserDTO userDTO) {
+        Role role = this.roleRepository.findById(userDTO.getRoleId())
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found!"));
+        User user = User.builder()
+                .login(userDTO.getLogin())
+                .email(userDTO.getEmail() != null ? userDTO.getEmail() : null)
+                .name(userDTO.getName())
+                .gender(UserGender.valueOf(userDTO.getGender()))
+                .password(this.passwordEncoder.encode(RandomUtil.generatePassword()))
+                .resetKey(RandomUtil.generateResetKey())
+                .resetDate(Instant.now())
+                .langKey(userDTO.getLangKey() != null ? userDTO.getLangKey() : Constants.DEFAULT_LANGUAGE)
+                .activated(true)
+                .phone(userDTO.getPhone())
+                .role(role)
+                .loginWith(LoginWith.SYSTEM)
+                .build();
+        userRepository.save(user);
+        this.clearUserCaches(user);
+        return toAdminUserDTO(user);
+    }
+
     public AdminUserDTO toAdminUserDTO(User user) {
         var userDTO = new AdminUserDTO();
         userDTO.setEmail(user.getEmail());
@@ -93,6 +114,8 @@ public class UserService {
         userDTO.setLastModifiedDate(user.getLastModifiedDate());
         userDTO.setLoginWith(user.getLoginWith());
         userDTO.setActivationKey(user.getActivationKey());
+        userDTO.setResetKey(user.getResetKey());
+        userDTO.setActivated(user.isActivated());
         return userDTO;
 
     }

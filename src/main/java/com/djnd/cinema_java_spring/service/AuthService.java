@@ -37,11 +37,14 @@ public class AuthService {
 
         }
         userLogin.setName(user.getName());
-        userLogin.setRole(user.getName());
+        userLogin.setRole(user.getRole());
         userLogin.setLoginWith(user.getLoginWith());
         res.setUser(userLogin);
         String sessionId = sessionManager.createNewSession(user.getId());
-        String accessToken = securityUtils.createAccessToken(user.getLogin(), res, sessionId, user.getPermissions());
+        var permissions = user.getPermissions();
+        permissions.add(user.getRole());
+        String accessToken = securityUtils.createAccessToken(user.getLogin(), res, sessionId,
+                permissions);
         res.setAccessToken(accessToken);
         var newRefreshToken = this.securityUtils.createRefreshToken(user.getLogin(), res);
         int updated = userRepository.updateRefreshTokenById(user.getId(), newRefreshToken);

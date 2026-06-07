@@ -71,4 +71,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     int updateSessionById(@Param("userId") Long userId, @Param("sessionId") String sessionId);
 
     Optional<User> findOneByActivationKey(String key);
+
+    @Query(value = "select exists(select 1 from User u where u.phone = :phone)")
+    boolean userExistByPhone(@Param("phone") String phone);
 }

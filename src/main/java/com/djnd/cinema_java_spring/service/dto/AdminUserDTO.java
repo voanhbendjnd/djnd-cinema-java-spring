@@ -44,4 +44,5 @@ public class AdminUserDTO implements Serializable {
     Instant createdDate, lastModifiedDate;
     String createdBy, lastModifiedBy;
     LoginWith loginWith;
+    String resetKey;
 }

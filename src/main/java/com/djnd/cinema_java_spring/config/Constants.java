@@ -11,6 +11,7 @@ public final class Constants {
     public static final String SYSTEM = "system";
     public static final String DEFAULT_LANGUAGE = "en";
     public static final String PHONE_REGEX = "^(0|\\+84)[0-9]{9}$";
+    public static final String VERSION_API = "/api/v1";
 
     private Constants() {
     }
