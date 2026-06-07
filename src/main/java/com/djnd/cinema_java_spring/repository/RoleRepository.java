@@ -13,5 +13,6 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
     String ROLES_BY_NAME_CACHE = "rolesByName";
 
     @Cacheable(cacheNames = ROLES_BY_NAME_CACHE, unless = "#result == null")
-    Optional<Role> findOneByNameIgnoreCase(String name);
+    Optional<Role> findOneByName(String name);
+
 }

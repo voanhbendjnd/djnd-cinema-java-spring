@@ -2,7 +2,6 @@ package com.djnd.cinema_java_spring.service;
 
 import java.util.UUID;
 
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 
 import com.djnd.cinema_java_spring.domain.entity.User;
@@ -19,7 +18,6 @@ import lombok.experimental.FieldDefaults;
 public class SessionManager {
 
     final UserRepository userRepository;
-    final CacheManager cacheManager;
 
     public String createNewSession(Long userId) {
         String newSessionId = UUID.randomUUID().toString();
@@ -50,18 +48,7 @@ public class SessionManager {
             user.setSessionId(null);
             userRepository.save(user);
 
-            // clearUserCache(finalUsername);
         });
     }
 
-    // private void clearUserCache(String login) {
-    // if (login != null) {
-
-    // var cache = cacheManager.getCache(UserRepository.USERS_BY_LOGIN_EMAIL_CACHE);
-    // if (cache != null) {
-    // cache.evictIfPresent(login.toLowerCase());
-    // }
-    // }
-
-    // }
 }

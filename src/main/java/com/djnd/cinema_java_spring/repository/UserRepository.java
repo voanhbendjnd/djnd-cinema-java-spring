@@ -74,4 +74,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     @Query(value = "select exists(select 1 from User u where u.phone = :phone)")
     boolean userExistByPhone(@Param("phone") String phone);
+
+    Optional<User> findOneByResetKey(@Param("resetKey") String resetKey);
 }

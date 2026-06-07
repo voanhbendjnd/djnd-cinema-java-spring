@@ -20,6 +20,7 @@ import com.djnd.cinema_java_spring.domain.enumeration.LoginWith;
 import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 import com.djnd.cinema_java_spring.repository.RoleRepository;
 import com.djnd.cinema_java_spring.repository.UserRepository;
+import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -58,7 +59,8 @@ public class UserService {
         // init new user
         String encryptedPassword = passwordEncoder.encode(password);
         UserGender gender = UserGender.valueOf(userDTO.getGender());
-        Role role = this.roleRepository.findById(userDTO.getRoleId())
+
+        Role role = this.roleRepository.findOneByName(AuthoritiesConstants.CUSTOMER)
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found!"));
         User newUser = User.builder()
                 .login(userDTO.getLogin().toLowerCase())
@@ -182,6 +184,17 @@ public class UserService {
             this.clearUserCaches(user);
             return user;
         });
+    }
+
+    public Optional<User> completePasswordReset(String newPassword, String resetKey) {
+        return userRepository.findOneByResetKey(resetKey)
+                .filter(user -> user.getResetDate().isAfter(Instant.now().minus(1, ChronoUnit.DAYS)))
+                .map(user -> {
+                    user.setPassword(passwordEncoder.encode(newPassword));
+                    user.setResetKey(null);
+                    this.clearUserCaches(user);
+                    return user;
+                });
     }
 
     public UserSecurityCacheDTO getSecurityCache(User user) {

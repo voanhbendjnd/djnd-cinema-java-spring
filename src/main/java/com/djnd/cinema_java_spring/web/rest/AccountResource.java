@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ import com.djnd.cinema_java_spring.service.UserService;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
+import com.djnd.cinema_java_spring.web.rest.vm.KeyAndPasswordVM;
 import com.djnd.cinema_java_spring.web.rest.vm.ManagedUserVM;
 
 import jakarta.validation.Valid;
@@ -44,11 +46,8 @@ public class AccountResource {
         if (!dto.getConfirmPassword().equals(dto.getConfirmPassword())) {
             throw new RequestInvalidException("Password not same thing!");
         }
-        try {
-            UserGender.valueOf(dto.getGender());
-
-        } catch (Exception ex) {
-            throw new RequestInvalidException("Gender invalid format!");
+        if (!ManagedUserVM.genderIsValid(dto.getGender())) {
+            throw new RequestInvalidException("Gender invalid!");
         }
         var res = userService.registerUser(dto, dto.getPassword());
         mailService.sendActivationEmail(res);
@@ -63,6 +62,27 @@ public class AccountResource {
             throw new AccountResourceException("No user was found for this activation key!");
         }
         return ResponseEntity.ok("Account activation successful");
+    }
+
+    @PostMapping("/reset-password/finish")
+    public ResponseEntity<String> finishPasswordReset(@RequestBody KeyAndPasswordVM keyAndPasswordVM) {
+        if (keyAndPasswordVM.getConfirmPassword().equals(keyAndPasswordVM.getNewPassword())) {
+            if (isPasswordLengthInvalid(keyAndPasswordVM.getNewPassword())) {
+                throw new RequestInvalidException("The password is not strong enough!");
+            }
+            var user = userService.completePasswordReset(keyAndPasswordVM.getNewPassword(), keyAndPasswordVM.getKey());
+            if (!user.isPresent()) {
+                throw new RequestInvalidException("Reset key invalid or over date!");
+            }
+            return ResponseEntity.ok("Reset password successful");
+        }
+        throw new RequestInvalidException("Password not the same thing!");
+    }
+
+    private static boolean isPasswordLengthInvalid(String password) {
+        return (StringUtils.isEmpty(password) ||
+                password.length() < ManagedUserVM.PASSWORD_MIN_LENGTH ||
+                password.length() > ManagedUserVM.PASSWORD_MAX_LENGTH);
     }
 
 }

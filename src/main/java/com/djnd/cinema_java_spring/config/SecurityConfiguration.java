@@ -66,6 +66,9 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/login").permitAll()
                                 .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/account/activate/**")
                                 .permitAll()
+                                .requestMatchers(HttpMethod.POST,
+                                        Constants.VERSION_API + "/account/reset-password/finish")
+                                .permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments/{id}").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments").permitAll()

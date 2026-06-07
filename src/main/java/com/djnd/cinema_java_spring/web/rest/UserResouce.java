@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.MailService;
@@ -17,6 +16,7 @@ import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
+import com.djnd.cinema_java_spring.web.rest.vm.ManagedUserVM;
 
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -47,10 +47,8 @@ public class UserResouce {
             if (userRepository.userExistByPhone(dto.getPhone()))
                 throw new RequestInvalidException("Phone already exist!");
         }
-        try {
-            UserGender.valueOf(dto.getGender());
-        } catch (RequestInvalidException re) {
-            throw new RequestInvalidException("Gender invalid format!");
+        if (!ManagedUserVM.genderIsValid(dto.getGender())) {
+            throw new RequestInvalidException("Gender invalid!");
         }
 
         var user = userService.createUser(dto);
