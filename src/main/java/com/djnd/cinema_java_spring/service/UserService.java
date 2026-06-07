@@ -113,11 +113,16 @@ public class UserService {
     }
 
     private void clearUserCaches(User user) {
-        Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE))
-                .evictIfPresent(user.getLogin());
+        var cacheByLogin = cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE);
+        if (cacheByLogin != null) {
+            cacheByLogin.evictIfPresent(user.getLogin());
+        }
+
         if (user.getEmail() != null) {
-            Objects.requireNonNull(cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE))
-                    .evictIfPresent(user.getEmail());
+            var cacheByEmail = cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE);
+            if (cacheByEmail != null) {
+                cacheByEmail.evictIfPresent(user.getEmail());
+            }
         }
     }
 
@@ -145,6 +150,15 @@ public class UserService {
     public Optional<UserSecurityCacheDTO> getSecurityCacheByEmail(String email) {
         return userRepository.findOneWithAuthoritiesByEmail(email.toLowerCase()).map(this::getSecurityCache);
 
+    }
+
+    public Optional<User> activateRegistration(String key) {
+        return userRepository.findOneByActivationKey(key).map(user -> {
+            user.setActivated(true);
+            user.setActivationKey(null);
+            this.clearUserCaches(user);
+            return user;
+        });
     }
 
     public UserSecurityCacheDTO getSecurityCache(User user) {

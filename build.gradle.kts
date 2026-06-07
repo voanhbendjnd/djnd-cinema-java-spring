@@ -49,6 +49,17 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-websocket")
     implementation("tech.jhipster:jhipster-framework:8.1.0")
     runtimeOnly("com.h2database:h2")
+    // @enablecaching manage life
+    implementation("org.springframework.boot:spring-boot-starter-cache")
+    //jcache API (JSR-107):provide (javax.cache.* hoặc jakarta.cache.*)
+    implementation("javax.cache:cache-api")
+    // ehcache 3.x: manage ram and ttl
+    implementation("org.ehcache:ehcache:3.10.8:jakarta")
+    // connect hibernate 6 with jcache
+    implementation("org.hibernate.orm:hibernate-jcache")
+
+
+
 }
 
 tasks.withType<Test> {

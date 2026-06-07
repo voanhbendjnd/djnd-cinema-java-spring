@@ -1,7 +1,5 @@
 package com.djnd.cinema_java_spring.service;
 
-import java.util.Date;
-
 import org.hibernate.validator.internal.constraintvalidators.hv.EmailValidator;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;

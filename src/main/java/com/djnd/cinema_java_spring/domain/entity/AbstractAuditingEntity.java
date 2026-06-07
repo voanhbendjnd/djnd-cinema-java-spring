@@ -20,7 +20,8 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class) // auto listen and field info
+@EntityListeners(AuditingEntityListener.class)
+// auto listen and field info
 // skip attributes from req but still get for res
 @JsonIgnoreProperties(value = { "createdBy", "createdDate", "lastModifiedBy", "lastModifiedDate" }, allowGetters = true)
 @FieldDefaults(level = AccessLevel.PRIVATE)

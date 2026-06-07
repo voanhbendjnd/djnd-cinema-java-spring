@@ -1,10 +1,14 @@
 package com.djnd.cinema_java_spring.web.rest;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponseException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
@@ -28,6 +32,12 @@ public class AccountResource {
     final UserService userService;
     final MailService mailService;
 
+    private static class AccountResourceException extends ErrorResponseException {
+        private AccountResourceException(String message) {
+            super(HttpStatus.BAD_REQUEST, ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, message), null);
+        }
+    }
+
     @PostMapping("/register")
     @ApiMessage("User register account")
     public ResponseEntity<AdminUserDTO> registerAccount(@Valid @RequestBody ManagedUserVM dto) {
@@ -43,6 +53,16 @@ public class AccountResource {
         var res = userService.registerUser(dto, dto.getPassword());
         mailService.sendActivationEmail(res);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
+    }
+
+    @GetMapping("/activate")
+    @ApiMessage("Activation account")
+    public ResponseEntity<String> activateAccount(@RequestParam(value = "key") String key) {
+        var user = userService.activateRegistration(key);
+        if (!user.isPresent()) {
+            throw new AccountResourceException("No user was found for this activation key!");
+        }
+        return ResponseEntity.ok("Account activation successful");
     }
 
 }

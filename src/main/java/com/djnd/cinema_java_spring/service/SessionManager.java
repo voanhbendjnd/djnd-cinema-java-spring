@@ -49,18 +49,19 @@ public class SessionManager {
         userRepository.findOneByLoginOrEmail(finalUsername, finalUsername).ifPresent(user -> {
             user.setSessionId(null);
             userRepository.save(user);
-            clearUserCache(finalUsername);
+
+            // clearUserCache(finalUsername);
         });
     }
 
-    private void clearUserCache(String login) {
-        if (login != null) {
+    // private void clearUserCache(String login) {
+    // if (login != null) {
 
-            var cache = cacheManager.getCache(UserRepository.USERS_BY_LOGIN_EMAIL_CACHE);
-            if (cache != null) {
-                cache.evictIfPresent(login.toLowerCase());
-            }
-        }
+    // var cache = cacheManager.getCache(UserRepository.USERS_BY_LOGIN_EMAIL_CACHE);
+    // if (cache != null) {
+    // cache.evictIfPresent(login.toLowerCase());
+    // }
+    // }
 
-    }
+    // }
 }

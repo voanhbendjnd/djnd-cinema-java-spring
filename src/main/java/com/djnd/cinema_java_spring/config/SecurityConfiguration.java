@@ -51,7 +51,8 @@ public class SecurityConfiguration {
     // PublicEndpointFilter publicEndpointFilter
     ) throws Exception {
         String[] whiteList = {
-                "/**",
+                // "/**",
+                "/error",
                 "/storage/**",
                 "/api/v1/search/**",
                 "/ws/**",
@@ -64,6 +65,7 @@ public class SecurityConfiguration {
                         auth -> auth
                                 .requestMatchers(HttpMethod.POST, VERSION_API + "/account/register").permitAll()
                                 .requestMatchers(HttpMethod.POST, VERSION_API + "/auth/login").permitAll()
+                                .requestMatchers(HttpMethod.GET, VERSION_API + "/account/activate/**").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/categories").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments/{id}").permitAll()
                                 // .requestMatchers(HttpMethod.GET, "/api/v1/comments").permitAll()

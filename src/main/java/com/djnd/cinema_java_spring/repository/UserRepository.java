@@ -21,7 +21,6 @@ import com.djnd.cinema_java_spring.domain.entity.User;
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
     String USERS_BY_LOGIN_CACHE = "usersByLogin";
     String USERS_BY_EMAIL_CACHE = "usersByEmail";
-    String USERS_BY_LOGIN_EMAIL_CACHE = "usersByLoginOrEmail";
     String USERS_BY_ID_CACHE = "usersById";
     String USERS_PERMISSION_STRING_CACHE = "usersPermissionStringsById";
 
@@ -70,4 +69,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Modifying
     @Query(value = "update User u set u.sessionId = :sessionId where u.id = :userId")
     int updateSessionById(@Param("userId") Long userId, @Param("sessionId") String sessionId);
+
+    Optional<User> findOneByActivationKey(String key);
 }

@@ -42,6 +42,7 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
+// level up speed read data and accept cache
 @Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 @Builder
 @NoArgsConstructor
