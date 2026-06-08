@@ -12,12 +12,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
+import com.djnd.cinema_java_spring.repository.UserRepository;
+import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.MailService;
 import com.djnd.cinema_java_spring.service.UserService;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
+import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
 import com.djnd.cinema_java_spring.web.rest.vm.KeyAndPasswordVM;
 import com.djnd.cinema_java_spring.web.rest.vm.ManagedUserVM;
 
@@ -33,6 +35,7 @@ import lombok.experimental.FieldDefaults;
 public class AccountResource {
     final UserService userService;
     final MailService mailService;
+    final UserRepository userRepository;
 
     private static class AccountResourceException extends ErrorResponseException {
         private AccountResourceException(String message) {
@@ -52,6 +55,42 @@ public class AccountResource {
         var res = userService.registerUser(dto, dto.getPassword());
         mailService.sendActivationEmail(res);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
+    }
+
+    /**
+     * 
+     * @param name
+     * @param email
+     * @param langKey
+     * @param gender
+     * @return
+     */
+    @PostMapping
+    @ApiMessage("Update info account")
+    public ResponseEntity<String> updateAccount(@Valid @RequestBody AdminUserDTO userDTO) {
+        String userLogin = SecurityUtils.getCurrentUserLogin()
+                .orElseThrow(() -> new AccountResourceException("Current user login not found!"));
+
+        // exist by login
+        if (userRepository.existsByLoginAndIdNot(userLogin, userDTO.getId()))
+            throw new UsernameAlreadyUsedException("Login already exist!");
+        // exist by email
+        if (userDTO.getEmail() != null) {
+            if (userRepository.existsByEmailAndIdNot(userDTO.getEmail().toLowerCase(), userDTO.getId()))
+                throw new UsernameAlreadyUsedException("Email already exist!");
+        }
+        // exist by phone
+        if (userDTO.getPhone() != null) {
+            if (userRepository.existsByPhoneAndIdNot(userDTO.getPhone(), userDTO.getId())) {
+                throw new RequestInvalidException("Phone already exist!");
+            }
+        }
+        if (!ManagedUserVM.genderIsValid(userDTO.getGender())) {
+            throw new RequestInvalidException("Gender invalid format!");
+        }
+        userService.updateUser(userDTO.getName(), userDTO.getEmail(), userDTO.getLangKey(), userDTO.getPhone(),
+                userDTO.getGender());
+        return ResponseEntity.ok("Update user success");
     }
 
     @GetMapping("/activate")

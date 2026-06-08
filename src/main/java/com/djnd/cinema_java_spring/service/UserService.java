@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.math3.analysis.function.Constant;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -21,9 +22,11 @@ import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 import com.djnd.cinema_java_spring.repository.RoleRepository;
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
+import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
+import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
 import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
 
 import lombok.AccessLevel;
@@ -99,6 +102,48 @@ public class UserService {
         userRepository.save(user);
         this.clearUserCaches(user);
         return toAdminUserDTO(user);
+    }
+
+    public AdminUserDTO updateUser(AdminUserDTO userDTO) {
+
+        User user = userRepository.findById(userDTO.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        this.clearUserCaches(user);
+        user.setLogin(userDTO.getLogin().toLowerCase());
+        if (userDTO.getEmail() != null) {
+            user.setEmail(userDTO.getEmail().toLowerCase());
+        }
+        user.setName(userDTO.getName());
+        user.setPhone(userDTO.getPhone());
+        user.setActivated(userDTO.isActivated());
+        user.setLangKey(userDTO.getLangKey());
+        user.setGender(UserGender.valueOf(userDTO.getGender()));
+        userRepository.save(user);
+        // concurrent
+        this.clearUserCaches(user);
+
+        return this.toAdminUserDTO(user);
+
+    }
+
+    public void updateUser(String name, String email, String langKey, String phone, String gender) {
+        var userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new UnauthorizedException("You are not logged in!");
+        }
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        this.clearUserCaches(user);
+        if (name != null)
+            user.setName(name);
+        if (email != null)
+            user.setEmail(email);
+        if (phone != null)
+            user.setPhone(phone);
+        if (gender != null)
+            user.setGender(UserGender.valueOf(gender));
+        user.setLangKey(langKey != null ? langKey : Constants.DEFAULT_LANGUAGE);
+        userRepository.save(user);
+        this.clearUserCaches(user);
     }
 
     public AdminUserDTO toAdminUserDTO(User user) {

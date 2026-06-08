@@ -76,4 +76,11 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     boolean userExistByPhone(@Param("phone") String phone);
 
     Optional<User> findOneByResetKey(@Param("resetKey") String resetKey);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
+
+    boolean existsByLoginAndIdNot(String login, Long id);
+
+    boolean existsByPhoneAndIdNot(String phone, Long id);
+
 }

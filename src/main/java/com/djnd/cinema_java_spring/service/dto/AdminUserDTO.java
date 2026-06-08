@@ -35,7 +35,7 @@ public class AdminUserDTO implements Serializable {
     String email;
     @Pattern(regexp = Constants.PHONE_REGEX, message = "Phone invalid format!")
     String phone;
-    @NotNull(message = "Role null")
+    // @NotNull(message = "Role null")
     Integer roleId;
     String activationKey;
     @Size(min = 2, max = 10)

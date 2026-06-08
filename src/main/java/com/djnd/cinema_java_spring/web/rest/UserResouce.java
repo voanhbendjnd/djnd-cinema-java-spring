@@ -3,11 +3,14 @@ package com.djnd.cinema_java_spring.web.rest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.djnd.cinema_java_spring.config.Constants;
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.MailService;
@@ -19,6 +22,7 @@ import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
 import com.djnd.cinema_java_spring.web.rest.vm.ManagedUserVM;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -54,5 +58,32 @@ public class UserResouce {
         var user = userService.createUser(dto);
         mailService.sendCreationEmail(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
+    }
+
+    @PutMapping({ "/users", "/users/{login}" })
+    @ApiMessage("Update user")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<AdminUserDTO> updateUser(@Valid @RequestBody AdminUserDTO userDTO,
+            @PathVariable(name = "login", required = false) @Pattern(regexp = Constants.LOGIN_REGEX) String login) {
+        // exist by login
+        if (userRepository.existsByLoginAndIdNot(userDTO.getLogin().toLowerCase(), userDTO.getId()))
+            throw new UsernameAlreadyUsedException("Login already exist!");
+        // exist by email
+        if (userDTO.getEmail() != null) {
+            if (userRepository.existsByEmailAndIdNot(userDTO.getEmail().toLowerCase(), userDTO.getId()))
+                throw new UsernameAlreadyUsedException("Email already exist!");
+        }
+        // exist by phone
+        if (userDTO.getPhone() != null) {
+            if (userRepository.existsByPhoneAndIdNot(userDTO.getPhone(), userDTO.getId())) {
+                throw new RequestInvalidException("Phone already exist!");
+            }
+        }
+
+        if (!ManagedUserVM.genderIsValid(userDTO.getGender())) {
+            throw new RequestInvalidException("Gender invalid format!");
+        }
+        return ResponseEntity.ok(userService.updateUser(userDTO));
+
     }
 }
