@@ -68,15 +68,16 @@ public class AccountResource {
     @PostMapping
     @ApiMessage("Update info account")
     public ResponseEntity<String> updateAccount(@Valid @RequestBody AdminUserDTO userDTO) {
-        String userLogin = SecurityUtils.getCurrentUserLogin()
-                .orElseThrow(() -> new AccountResourceException("Current user login not found!"));
-
-        // exist by login
-        if (userRepository.existsByLoginAndIdNot(userLogin, userDTO.getId()))
-            throw new UsernameAlreadyUsedException("Login already exist!");
+        if (userDTO.getId() != null) {
+            throw new RequestInvalidException("A new user cannot already have an ID");
+        }
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new AccountResourceException("Current user login not found!");
+        }
         // exist by email
         if (userDTO.getEmail() != null) {
-            if (userRepository.existsByEmailAndIdNot(userDTO.getEmail().toLowerCase(), userDTO.getId()))
+            if (userRepository.existsByEmailAndIdNot(userDTO.getEmail().toLowerCase(), userId))
                 throw new UsernameAlreadyUsedException("Email already exist!");
         }
         // exist by phone
