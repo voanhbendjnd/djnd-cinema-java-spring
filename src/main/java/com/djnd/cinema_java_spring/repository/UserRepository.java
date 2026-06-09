@@ -7,6 +7,8 @@ import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -16,6 +18,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.User;
+import com.djnd.cinema_java_spring.service.projection.PublishUserProjection;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
@@ -84,5 +87,15 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     boolean existsByLoginAndIdNot(String login, Long id);
 
     boolean existsByPhoneAndIdNot(String phone, Long id);
+
+    @Query(value = """
+                    select u.id as id, u.login as login,
+                            u.email as email, u.gender as gender,
+                                    u.phone as phone, u.createdDate as createdDate,
+                                            u.lastModifiedDate as lastModifiedDate,
+                                                    u.createdBy as createdBy,
+                                                        u.lastModifiedBy as lastModifiedBy
+            from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')""", countQuery = "select count(*) from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')")
+    Page<PublishUserProjection> fetchAllUser(Pageable pageable, @Param("q") String q);
 
 }

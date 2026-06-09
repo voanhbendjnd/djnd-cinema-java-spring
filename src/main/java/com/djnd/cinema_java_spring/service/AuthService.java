@@ -24,6 +24,7 @@ public class AuthService {
     final SessionManager sessionManager;
     final SecurityUtils securityUtils;
     final UserRepository userRepository;
+    final UserService userService;
     @Value("${djnd.jwt.access-token-validity-in-seconds}")
     private Long expiresIn;
 
@@ -43,6 +44,7 @@ public class AuthService {
         userLogin.setLoginWith(user.getLoginWith());
         res.setUser(userLogin);
         String sessionId = sessionManager.createNewSession(user.getId());
+        userService.evictUserCache(user.getLogin(), user.getEmail());
         var permissions = user.getPermissions();
         permissions.add(user.getRole());
         String accessToken = securityUtils.createAccessToken(user.getLogin(), res, sessionId,

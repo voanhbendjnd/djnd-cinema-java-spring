@@ -25,7 +25,7 @@ public class PermissionInterceptorConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         String[] whiteList = {
-                // "/api/v1/permissions/data"
+                // "/api/v1/admin/users/**"
         };
         String[] securePatterns = { "/api/v1/users/**",
                 "/api/v1/roles/**",

@@ -18,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 public class SessionManager {
 
     final UserRepository userRepository;
+    final UserService userService;
 
     public String createNewSession(Long userId) {
         String newSessionId = UUID.randomUUID().toString();
@@ -29,17 +30,10 @@ public class SessionManager {
         throw new ResourceNotFoundException("User not found!");
     }
 
-    public User getUserByLogin(String login) {
-        return userRepository.findOneByLoginOrEmail(login.toLowerCase(), login.toLowerCase())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
-    }
-
     public boolean isValidSession(String login, String sessionId) {
-        User user = this.getUserByLogin(login.toLowerCase());
-        if (user.getSessionId() == null) {
-            return false;
-        }
-        return user.getSessionId().equals(sessionId);
+        return userService.getSecurityCacheByLogin(login.toLowerCase())
+                .map(user -> sessionId.equals(user.getSessionId()))
+                .orElse(false);
     }
 
     public void invalidateSession(String username) {
@@ -47,7 +41,7 @@ public class SessionManager {
         userRepository.findOneByLoginOrEmail(finalUsername, finalUsername).ifPresent(user -> {
             user.setSessionId(null);
             userRepository.save(user);
-
+            userService.evictUserCache(user.getLogin(), user.getEmail());
         });
     }
 

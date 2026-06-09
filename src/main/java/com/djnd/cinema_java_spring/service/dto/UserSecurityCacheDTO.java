@@ -33,4 +33,5 @@ public class UserSecurityCacheDTO implements Serializable {
     String langKey;
     String role;
     Set<String> permissions;
+    String sessionId;
 }

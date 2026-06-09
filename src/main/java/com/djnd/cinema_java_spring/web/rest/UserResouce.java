@@ -1,13 +1,17 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.djnd.cinema_java_spring.config.Constants;
@@ -16,6 +20,7 @@ import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.MailService;
 import com.djnd.cinema_java_spring.service.UserService;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
+import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
@@ -85,5 +90,21 @@ public class UserResouce {
         }
         return ResponseEntity.ok(userService.updateUser(userDTO));
 
+    }
+
+    @GetMapping("/users")
+    @ApiMessage("Get all user with pagination")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<ResultPaginationDTO> fetchAllPublishUser(@RequestParam(name = "q", required = false) String q,
+            Pageable pageable) {
+        return ResponseEntity.ok(userService.getAllUserWithPagination(pageable, q));
+    }
+
+    @DeleteMapping("/users/{login}")
+    @ApiMessage("Delete user by login")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")") // get from security context
+    public ResponseEntity<Void> deleteUserByLogin(@PathVariable(name = "login") String login) {
+        userService.deleteUser(login);
+        return ResponseEntity.ok(null);
     }
 }

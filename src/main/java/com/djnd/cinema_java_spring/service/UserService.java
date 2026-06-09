@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
+import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -146,27 +148,6 @@ public class UserService {
         this.clearUserCaches(user);
     }
 
-    public AdminUserDTO toAdminUserDTO(User user) {
-        var userDTO = new AdminUserDTO();
-        userDTO.setEmail(user.getEmail());
-        userDTO.setGender(user.getGender().toString());
-        userDTO.setLogin(user.getLogin());
-        userDTO.setName(user.getName());
-        userDTO.setPhone(user.getPhone());
-        userDTO.setLangKey(user.getLangKey());
-        userDTO.setId(user.getId());
-        userDTO.setCreatedBy(user.getCreatedBy());
-        userDTO.setCreatedDate(user.getCreatedDate());
-        userDTO.setLastModifiedBy(user.getLastModifiedBy());
-        userDTO.setLastModifiedDate(user.getLastModifiedDate());
-        userDTO.setLoginWith(user.getLoginWith());
-        userDTO.setActivationKey(user.getActivationKey());
-        userDTO.setResetKey(user.getResetKey());
-        userDTO.setActivated(user.isActivated());
-        return userDTO;
-
-    }
-
     /**
      * check user when after 3 days not logged in remove account
      * 0s 0mi 1am *everyday *everyweek
@@ -267,6 +248,28 @@ public class UserService {
 
     }
 
+    @Transactional
+    public void deleteUser(String login) {
+        var existingUser = userRepository.findOneByLogin(login.toLowerCase())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        userRepository.delete(existingUser);
+        this.clearUserCaches(existingUser);
+    }
+
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getAllUserWithPagination(Pageable pageable, String q) {
+        var res = new ResultPaginationDTO();
+        var meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        var page = userRepository.fetchAllUser(pageable, q != null ? q.toLowerCase() : "");
+        meta.setPages(page.getTotalPages());
+        meta.setTotal(page.getTotalElements());
+        res.setMeta(meta);
+        res.setResult(page.getContent());
+        return res;
+    }
+
     public UserSecurityCacheDTO getSecurityCache(User user) {
         var res = new UserSecurityCacheDTO();
         res.setEmail(user.getEmail());
@@ -279,8 +282,43 @@ public class UserService {
         res.setName(user.getName());
         res.setId(user.getId());
         res.setRole(user.getRole().getName());
-        res.setPermissions(
-                user.getRole().getPermissions().stream().map(Permission::getName).collect(Collectors.toSet()));
+        var perms = user.getRole().getPermissions().stream().map(Permission::getName).collect(Collectors.toSet());
+        perms.add(user.getRole().getName());
+        res.setPermissions(perms);
+        res.setSessionId(user.getSessionId());
         return res;
     }
+
+    public void evictUserCache(String login, String email) {
+        var cacheByLogin = cacheManager.getCache(UserRepository.USERS_BY_LOGIN_CACHE);
+        if (cacheByLogin != null && login != null) {
+            cacheByLogin.evictIfPresent(login.toLowerCase());
+        }
+        var cacheByEmail = cacheManager.getCache(UserRepository.USERS_BY_EMAIL_CACHE);
+        if (cacheByEmail != null && email != null) {
+            cacheByEmail.evictIfPresent(email.toLowerCase());
+        }
+    }
+
+    public AdminUserDTO toAdminUserDTO(User user) {
+        var userDTO = new AdminUserDTO();
+        userDTO.setEmail(user.getEmail());
+        userDTO.setGender(user.getGender().toString());
+        userDTO.setLogin(user.getLogin());
+        userDTO.setName(user.getName());
+        userDTO.setPhone(user.getPhone());
+        userDTO.setLangKey(user.getLangKey());
+        userDTO.setId(user.getId());
+        userDTO.setCreatedBy(user.getCreatedBy());
+        userDTO.setCreatedDate(user.getCreatedDate());
+        userDTO.setLastModifiedBy(user.getLastModifiedBy());
+        userDTO.setLastModifiedDate(user.getLastModifiedDate());
+        userDTO.setLoginWith(user.getLoginWith());
+        userDTO.setActivationKey(user.getActivationKey());
+        userDTO.setResetKey(user.getResetKey());
+        userDTO.setActivated(user.isActivated());
+        return userDTO;
+
+    }
+
 }
