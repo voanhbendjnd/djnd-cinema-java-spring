@@ -30,6 +30,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     Optional<User> findOneByEmail(String email);
 
+    Optional<User> findOneByEmailAndActivatedIsTrue(String email);
+
     // @Cacheable(cacheNames = USERS_BY_LOGIN_EMAIL_CACHE, key = "#login")
     @EntityGraph(attributePaths = { "role", "role.permissions" })
     Optional<User> findOneByLoginOrEmail(String login, String email);
@@ -75,7 +77,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     @Query(value = "select exists(select 1 from User u where u.phone = :phone)")
     boolean userExistByPhone(@Param("phone") String phone);
 
-    Optional<User> findOneByResetKey(@Param("resetKey") String resetKey);
+    Optional<User> findOneByResetKey(String resetKey);
 
     boolean existsByEmailAndIdNot(String email, Long id);
 

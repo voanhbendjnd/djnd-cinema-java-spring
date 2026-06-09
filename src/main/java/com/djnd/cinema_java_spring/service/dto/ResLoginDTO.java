@@ -30,7 +30,6 @@ public class ResLoginDTO {
         String role;
         LoginWith loginWith;
         String login;
-        Boolean activated;
         UserGender gender;
     }
 

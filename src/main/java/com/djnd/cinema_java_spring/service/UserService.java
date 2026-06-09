@@ -5,7 +5,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.math3.analysis.function.Constant;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,6 +24,7 @@ import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
+import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
 import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
@@ -231,6 +231,17 @@ public class UserService {
         });
     }
 
+    public Optional<AdminUserDTO> requestPasswordReset(String email) {
+        return userRepository.findOneByEmailAndActivatedIsTrue(email.toLowerCase()).map(existingUser -> {
+            existingUser.setResetKey(RandomUtil.generateResetKey());
+            existingUser.setResetDate(Instant.now());
+            this.clearUserCaches(existingUser);
+
+            return this.toAdminUserDTO(existingUser);
+        });
+
+    }
+
     public Optional<User> completePasswordReset(String newPassword, String resetKey) {
         return userRepository.findOneByResetKey(resetKey)
                 .filter(user -> user.getResetDate().isAfter(Instant.now().minus(1, ChronoUnit.DAYS)))
@@ -240,6 +251,20 @@ public class UserService {
                     this.clearUserCaches(user);
                     return user;
                 });
+    }
+
+    @Transactional
+    public void changePassword(String currentPassword, String newPassword) {
+        var userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null)
+            throw new UnauthorizedException("You are not logged in!");
+        var user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RequestInvalidException("Current password incorrect!");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        this.clearUserCaches(user);
+
     }
 
     public UserSecurityCacheDTO getSecurityCache(User user) {

@@ -36,6 +36,8 @@ public class AuthService {
             userLogin.setEmail(user.getEmail());
 
         }
+        userLogin.setId(user.getId());
+        userLogin.setGender(user.getGender());
         userLogin.setName(user.getName());
         userLogin.setRole(user.getRole());
         userLogin.setLoginWith(user.getLoginWith());
