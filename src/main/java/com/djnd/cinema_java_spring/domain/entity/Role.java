@@ -3,6 +3,9 @@ package com.djnd.cinema_java_spring.domain.entity;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
+import org.hibernate.annotations.Cache;
+
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +23,8 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Table(name = "roles")
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
+
 public class Role extends AbstractAuditingEntity<Integer> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

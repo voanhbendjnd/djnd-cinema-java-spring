@@ -15,6 +15,7 @@ import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.djnd.cinema_java_spring.domain.entity.Permission;
 import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.repository.UserRepository;
@@ -54,6 +55,8 @@ public class CacheConfiguration {
         createCache(cm, User.class.getName());
         createCache(cm, User.class.getName() + ".role");
         createCache(cm, Role.class.getName() + ".permissions");
+        createCache(cm, Permission.class.getName());
+        createCache(cm, Role.class.getName());
 
         return cm;
     }

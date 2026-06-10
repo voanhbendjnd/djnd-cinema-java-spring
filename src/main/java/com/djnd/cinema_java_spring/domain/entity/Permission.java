@@ -4,6 +4,9 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+
 import com.djnd.cinema_java_spring.domain.enumeration.PermissionMethod;
 
 import jakarta.persistence.Column;
@@ -32,6 +35,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Cache(usage = CacheConcurrencyStrategy.NONSTRICT_READ_WRITE)
 public class Permission extends AbstractAuditingEntity<Integer> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
