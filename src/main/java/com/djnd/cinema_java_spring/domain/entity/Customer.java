@@ -35,4 +35,7 @@ public class Customer {
     String address;
     @Column(name = "identity_card", length = 20)
     String identityCard;
+    @Column(name = "loyalty_points", nullable = false)
+    @Builder.Default
+    Integer loyaltyPoints = 0;
 }
