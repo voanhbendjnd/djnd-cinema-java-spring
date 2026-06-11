@@ -22,80 +22,77 @@ import com.djnd.cinema_java_spring.service.projection.PublishUserProjection;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificationExecutor<User> {
-    String USERS_BY_LOGIN_CACHE = "usersByLogin";
-    String USERS_BY_EMAIL_CACHE = "usersByEmail";
-    String USERS_BY_ID_CACHE = "usersById";
-    String USERS_PERMISSION_STRING_CACHE = "usersPermissionStringsById";
+        String USERS_BY_LOGIN_CACHE = "usersByLogin";
+        String USERS_BY_EMAIL_CACHE = "usersByEmail";
+        String USERS_BY_ID_CACHE = "usersById";
 
-    List<User> findAllByActivatedIsFalseAndActivationKeyNotNullAndCreatedDateBefore(Instant createdDateBefore);
+        List<User> findAllByActivatedIsFalseAndActivationKeyNotNullAndCreatedDateBefore(Instant createdDateBefore);
 
-    Optional<User> findOneByLogin(String login);
+        Optional<User> findOneByLogin(String login);
 
-    Optional<User> findOneByEmail(String email);
+        Optional<User> findOneByEmail(String email);
 
-    Optional<User> findOneByEmailAndActivatedIsTrue(String email);
+        Optional<User> findOneByEmailAndActivatedIsTrue(String email);
 
-    // @Cacheable(cacheNames = USERS_BY_LOGIN_EMAIL_CACHE, key = "#login")
-    @EntityGraph(attributePaths = { "role", "role.permissions" })
-    Optional<User> findOneByLoginOrEmail(String login, String email);
+        // @Cacheable(cacheNames = USERS_BY_LOGIN_EMAIL_CACHE, key = "#login")
+        @EntityGraph(attributePaths = { "role", "role.permissions" })
+        Optional<User> findOneByLoginOrEmail(String login, String email);
 
-    @EntityGraph(attributePaths = { "role", "role.permissions" })
-    @Cacheable(cacheNames = USERS_BY_ID_CACHE, unless = "#result == null")
-    @Query(value = "select u from User u where u.id = :userId")
-    Optional<User> findWithDetailById(@Param("userId") Long userId);
+        @EntityGraph(attributePaths = { "role", "role.permissions" })
+        @Cacheable(cacheNames = USERS_BY_ID_CACHE, unless = "#result == null")
+        @Query(value = "select u from User u where u.id = :userId")
+        Optional<User> findWithDetailById(@Param("userId") Long userId);
 
-    @Cacheable(cacheNames = USERS_PERMISSION_STRING_CACHE, unless = "#result == null")
-    @Query(value = "select concat(p.apiPath,':' ,p.method) from User u join u.role r join r.permissions p where u.id = :userId")
-    Set<String> findPermissionStringsByUserId(@Param("userId") Long userId);
+        @Modifying
+        @Query(value = "update User u set u.refreshToken = :refreshToken where u.id = :userId")
+        int updateRefreshTokenById(@Param("userId") Long userId, @Param("refreshToken") String token);
 
-    @Modifying
-    @Query(value = "update User u set u.refreshToken = :refreshToken where u.id = :userId")
-    int updateRefreshTokenById(@Param("userId") Long userId, @Param("refreshToken") String token);
+        @Modifying
+        @Query(value = "update User u set u.refreshToken = null where u.email = :email")
+        @CacheEvict(cacheNames = USERS_BY_EMAIL_CACHE)
+        int resetRefreshTokenByEmail(@Param("email") String email);
 
-    @Modifying
-    @Query(value = "update User u set u.refreshToken = null where u.email = :email")
-    @CacheEvict(cacheNames = USERS_BY_EMAIL_CACHE)
-    int resetRefreshTokenByEmail(@Param("email") String email);
+        @Modifying
+        @Query(value = "update User u set u.refreshToken = null where u.login = :login")
+        @CacheEvict(cacheNames = USERS_BY_LOGIN_CACHE)
+        int resetRefreshTokenByLogin(@Param("login") String login);
 
-    @Modifying
-    @Query(value = "update User u set u.refreshToken = null where u.login = :login")
-    @CacheEvict(cacheNames = USERS_BY_LOGIN_CACHE)
-    int resetRefreshTokenByLogin(@Param("login") String login);
+        @Query(value = "select u.refreshToken from User u where u.id = :userId")
+        String getRefreshTokenById(@Param("userId") Long userId);
 
-    @Query(value = "select u.refreshToken from User u where u.id = :userId")
-    String getRefreshTokenById(@Param("userId") Long userId);
+        @Query(value = "select u from User u left join fetch u.role r left join fetch r.permissions p where u.email = :email")
+        Optional<User> findOneWithAuthoritiesByEmail(@Param("email") String email);
 
-    @Query(value = "select u from User u left join fetch u.role r left join fetch r.permissions p where u.email = :email")
-    Optional<User> findOneWithAuthoritiesByEmail(@Param("email") String email);
+        @Query(value = "select u from User u left join fetch u.role r left join fetch r.permissions p where u.login = :login")
+        Optional<User> findOneWithAuthoritiesByLogin(@Param("login") String login);
 
-    @Query(value = "select u from User u left join fetch u.role r left join fetch r.permissions p where u.login = :login")
-    Optional<User> findOneWithAuthoritiesByLogin(@Param("login") String login);
+        @Modifying
+        @Query(value = "update User u set u.sessionId = :sessionId where u.id = :userId")
+        int updateSessionById(@Param("userId") Long userId, @Param("sessionId") String sessionId);
 
-    @Modifying
-    @Query(value = "update User u set u.sessionId = :sessionId where u.id = :userId")
-    int updateSessionById(@Param("userId") Long userId, @Param("sessionId") String sessionId);
+        Optional<User> findOneByActivationKey(String key);
 
-    Optional<User> findOneByActivationKey(String key);
+        @Query(value = "select exists(select 1 from User u where u.phone = :phone)")
+        boolean userExistByPhone(@Param("phone") String phone);
 
-    @Query(value = "select exists(select 1 from User u where u.phone = :phone)")
-    boolean userExistByPhone(@Param("phone") String phone);
+        Optional<User> findOneByResetKey(String resetKey);
 
-    Optional<User> findOneByResetKey(String resetKey);
+        boolean existsByEmailAndIdNot(String email, Long id);
 
-    boolean existsByEmailAndIdNot(String email, Long id);
+        boolean existsByLoginAndIdNot(String login, Long id);
 
-    boolean existsByLoginAndIdNot(String login, Long id);
+        boolean existsByPhoneAndIdNot(String phone, Long id);
 
-    boolean existsByPhoneAndIdNot(String phone, Long id);
+        @Query(value = """
+                                select u.id as id, u.login as login,
+                                        u.email as email, u.gender as gender,
+                                                u.phone as phone, u.createdDate as createdDate,
+                                                        u.lastModifiedDate as lastModifiedDate,
+                                                                u.createdBy as createdBy,
+                                                                    u.lastModifiedBy as lastModifiedBy
+                        from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')""", countQuery = "select count(*) from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')")
+        Page<PublishUserProjection> fetchAllUser(Pageable pageable, @Param("q") String q);
 
-    @Query(value = """
-                    select u.id as id, u.login as login,
-                            u.email as email, u.gender as gender,
-                                    u.phone as phone, u.createdDate as createdDate,
-                                            u.lastModifiedDate as lastModifiedDate,
-                                                    u.createdBy as createdBy,
-                                                        u.lastModifiedBy as lastModifiedBy
-            from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')""", countQuery = "select count(*) from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')")
-    Page<PublishUserProjection> fetchAllUser(Pageable pageable, @Param("q") String q);
-
+        @Query(value = "select exists(select 1 from User u join u.role r where r.id = :roleId)")
+        boolean existByRoleId(@Param("roleId") Integer roleId);
 }

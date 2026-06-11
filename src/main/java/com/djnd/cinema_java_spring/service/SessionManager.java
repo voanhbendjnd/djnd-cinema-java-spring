@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 

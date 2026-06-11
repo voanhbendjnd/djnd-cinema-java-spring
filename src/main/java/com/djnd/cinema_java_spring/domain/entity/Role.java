@@ -38,6 +38,7 @@ public class Role extends AbstractAuditingEntity<Integer> implements Serializabl
     String description;
     @ManyToMany
     @JoinTable(name = "permission_role", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
+
     List<Permission> permissions;
     @OneToMany(mappedBy = "role")
     List<User> users;

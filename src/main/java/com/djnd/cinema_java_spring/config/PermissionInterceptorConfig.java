@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.djnd.cinema_java_spring.repository.UserRepository;
+import com.djnd.cinema_java_spring.repository.PermissionRepository;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -15,11 +15,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class PermissionInterceptorConfig implements WebMvcConfigurer {
-    final UserRepository userRepository;
+    final PermissionRepository permissionRepository;
 
     @Bean
     PermissionInterceptor getPermissionInterceptor() {
-        return new PermissionInterceptor(userRepository);
+        return new PermissionInterceptor(permissionRepository);
     }
 
     @Override

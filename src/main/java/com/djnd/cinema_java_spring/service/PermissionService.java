@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.service;
 
+import org.springframework.cache.CacheManager;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import lombok.experimental.FieldDefaults;
 public class PermissionService {
     final PermissionRepository permissionRepository;
     final SessionFactory sessionFactory;
+    final CacheManager cacheManager;
 
     public PermissionDTO createPermission(PermissionDTO perDTO) {
         var newPermision = Permission.builder()
@@ -44,6 +46,7 @@ public class PermissionService {
         permission.setModule(perDTO.getModule().toLowerCase());
         var savePermission = permissionRepository.save(permission);
         sessionFactory.getCache().evictEntityData(Permission.class, savePermission.getId());
+        this.clearCachePermission(savePermission);
         return this.toPermissionDTO(savePermission);
 
     }
@@ -52,6 +55,7 @@ public class PermissionService {
         var permission = permissionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Permission not found!"));
         permissionRepository.delete(permission);
+        this.clearCachePermission(permission);
         sessionFactory.getCache().evictEntityData(Permission.class, id);
     }
 
@@ -77,6 +81,13 @@ public class PermissionService {
                 .module(permission.getModule())
                 .method(permission.getMethod().toString())
                 .build();
+    }
+
+    private void clearCachePermission(Permission permission) {
+        var cache = cacheManager.getCache(PermissionRepository.USERS_PERMISSION_STRING_CACHE);
+        if (cache != null) {
+            cache.evictIfPresent(permission.getId());
+        }
     }
 
 }

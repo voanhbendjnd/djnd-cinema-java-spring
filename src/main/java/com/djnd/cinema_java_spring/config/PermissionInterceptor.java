@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
 
-import com.djnd.cinema_java_spring.repository.UserRepository;
+import com.djnd.cinema_java_spring.repository.PermissionRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
 import com.djnd.cinema_java_spring.web.rest.errors.UserAccessDeniedException;
@@ -19,7 +19,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class PermissionInterceptor implements HandlerInterceptor {
-    final UserRepository userRepository;
+    final PermissionRepository permissionRepository;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -29,7 +29,7 @@ public class PermissionInterceptor implements HandlerInterceptor {
         var userId = SecurityUtils.getCurrentUserIdOrNull();
         if (userId == null)
             throw new UnauthorizedException("You are not logged in!");
-        var userPermissionStringsSet = userRepository.findPermissionStringsByUserId(userId);
+        var userPermissionStringsSet = permissionRepository.findPermissionStringsByUserId(userId);
         if (userPermissionStringsSet == null || userPermissionStringsSet.isEmpty()) {
             throw new UserAccessDeniedException("You do not have permission!");
         }
