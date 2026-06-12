@@ -64,6 +64,25 @@ public class AuthService {
         return userRepository.getRefreshTokenById(userId);
     }
 
+    public ResLoginDTO processRefreshToken(String refreshToken) {
+        Claims claims = this.securityUtils.parseRefreshTokenIgnoreExpired(refreshToken);
+        var username = claims.getSubject();
+        if (username == null) {
+            throw new BadCredentialsException("Invalid token format!");
+        }
+        UserSecurityCacheDTO userCaching = (new EmailValidator().isValid(username, null))
+                ? userService.getSecurityCacheByEmail(username)
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found!"))
+                : userService.getSecurityCacheByLogin(username)
+                        .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        String currentRefreshToken = userRepository.getRefreshTokenById(userCaching.getId());
+        if (currentRefreshToken == null || !currentRefreshToken.equals(refreshToken)) {
+            throw new BadCredentialsException("Refresh token invalid or you are not logged in!");
+        }
+        return this.generateResLoginDTO(userCaching);
+
+    }
+
     @Transactional
     public void logout(String refreshToken) {
         Claims claims = this.securityUtils.parseRefreshTokenIgnoreExpired(refreshToken);

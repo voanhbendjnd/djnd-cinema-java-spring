@@ -2,9 +2,12 @@ package com.djnd.cinema_java_spring.config;
 
 import java.io.IOException;
 
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
+
+import com.djnd.cinema_java_spring.security.UserNotActivatedException;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,8 +25,7 @@ import jakarta.servlet.http.HttpServletResponse;
  * kích hoạt khi jwt hết hạn hoặc không có
  */
 @Component
-public class SmartAuthenticationEntryPoint implements
-        AuthenticationEntryPoint {
+public class SmartAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
@@ -33,16 +35,34 @@ public class SmartAuthenticationEntryPoint implements
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-        String errorMessage = """
+        String message = "(session expired) Please login to access this resource";
+        String code = "UNAUTHORIZED";
+        boolean redirect = true;
+        String redirectUrl = "/login";
+        Throwable rootCause = authException.getCause();
+        if (authException instanceof UserNotActivatedException || rootCause instanceof UserNotActivatedException) {
+            message = rootCause != null ? rootCause.getMessage() : authException.getMessage();
+            code = "USER_NOT_ACTIVATED";
+            redirect = true;
+            redirectUrl = "/verify-account";
+        }
+        // else if (authException instanceof BadCredentialsException) {
+        // message = "Mật khẩu hoặc tài khoản không chính xác!";
+        // code = "BAD_CREDENTIALS";
+        // redirect = false;
+        // }
+
+        String errorMessage = String.format("""
                 {
                 "error": "Unauthorized",
-                "message": "(session expired) Please login to access this resource",
-                "code": "UNAUTHORIZED",
+                "message": "%s",
+                "code": "%s",
                 "publicApi": false,
-                "redirect": true,
-                "redirectUrl": "/login"
+                "redirect": %b,
+                "redirectUrl": "%s"
                 }
-                """;
+                """, message, code, redirect, redirectUrl);
+
         response.getWriter().write(errorMessage);
     }
 }

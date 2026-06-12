@@ -3,7 +3,6 @@ package com.djnd.cinema_java_spring.repository;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -25,6 +24,16 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         String USERS_BY_LOGIN_CACHE = "usersByLogin";
         String USERS_BY_EMAIL_CACHE = "usersByEmail";
         String USERS_BY_ID_CACHE = "usersById";
+
+        @Modifying
+        @Query(value = "update User u set u.refreshToken = :refreshToken where u.login = :login")
+        @CacheEvict(cacheNames = USERS_BY_LOGIN_CACHE, key = "#login")
+        int updateRefreshTokenByLogin(@Param("login") String login, @Param("refreshToken") String refreshToken);
+
+        @Modifying
+        @Query(value = "update User u set u.refreshToken = :refreshToken where u.email = :email")
+        @CacheEvict(cacheNames = USERS_BY_EMAIL_CACHE, key = "#email")
+        int updateRefreshTokenByEmail(@Param("email") String email, @Param("refreshToken") String refreshToken);
 
         List<User> findAllByActivatedIsFalseAndActivationKeyNotNullAndCreatedDateBefore(Instant createdDateBefore);
 
@@ -85,6 +94,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
         @Query(value = """
                                 select u.id as id, u.login as login,
+                                                u.name as name,
                                         u.email as email, u.gender as gender,
                                                 u.phone as phone, u.createdDate as createdDate,
                                                         u.lastModifiedDate as lastModifiedDate,

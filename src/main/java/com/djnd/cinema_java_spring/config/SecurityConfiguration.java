@@ -64,6 +64,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/account/register")
                                 .permitAll()
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/login").permitAll()
+                                .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/refresh").permitAll()
                                 .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/account/activate/**")
                                 .permitAll()
                                 .requestMatchers(HttpMethod.POST,

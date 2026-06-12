@@ -73,4 +73,23 @@ public class AuthenticateController {
         authService.logout(refreshToken);
         return ResponseEntity.ok("Logout success");
     }
+
+    @PostMapping("/refresh")
+    @ApiMessage("Refresh token")
+    public ResponseEntity<ResLoginDTO> refreshToken(
+            @CookieValue(name = "refresh_token", required = true) String refreshToken) {
+        if (refreshToken == null) {
+            throw new RequestInvalidException("Not found refresh token trong cookie!");
+        }
+        var resLoginDTO = authService.processRefreshToken(refreshToken);
+        var cookie = ResponseCookie
+                .from("refresh_token", authService.getRefreshTokenByUserId(resLoginDTO.getUser().getId()))
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(refreshTokenExpiration)
+                .build();
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(resLoginDTO);
+
+    }
 }

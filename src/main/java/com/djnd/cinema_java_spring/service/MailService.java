@@ -32,7 +32,7 @@ public class MailService {
     private static final Logger LOG = LoggerFactory.getLogger(MailService.class);
     private static final String USER = "user";
     private static final String BASE_URL = "baseUrl";
-    private static final String URL = "localhost:8080";
+    private static final String URL = "localhost:3000";
 
     @Async
     public void sendEmail(String to, String subject, String content, boolean isMultipart, boolean isHtml) {

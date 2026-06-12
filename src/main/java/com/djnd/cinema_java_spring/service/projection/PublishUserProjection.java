@@ -7,6 +7,8 @@ import com.djnd.cinema_java_spring.domain.enumeration.UserGender;
 public interface PublishUserProjection {
     Long getId();
 
+    String getName();
+
     String getLogin();
 
     String getEmail();
