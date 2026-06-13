@@ -2,6 +2,7 @@ package com.djnd.cinema_java_spring.service;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -257,12 +258,13 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public ResultPaginationDTO getAllUserWithPagination(Pageable pageable, String q) {
+    public ResultPaginationDTO getAllStaffCinemaWithPagination(Pageable pageable, String q) {
         var res = new ResultPaginationDTO();
         var meta = new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber() + 1);
         meta.setPageSize(pageable.getPageSize());
-        var page = userRepository.fetchAllUser(pageable, q != null ? q.toLowerCase() : "");
+        var page = userRepository.fetchAllStaffUser(pageable, q != null ? q.toLowerCase() : "",
+                List.of(AuthoritiesConstants.MANAGER, AuthoritiesConstants.STAFF));
         meta.setPages(page.getTotalPages());
         meta.setTotal(page.getTotalElements());
         res.setMeta(meta);

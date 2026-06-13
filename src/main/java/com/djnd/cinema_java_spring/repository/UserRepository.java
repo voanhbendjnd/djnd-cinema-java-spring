@@ -100,8 +100,12 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                                                         u.lastModifiedDate as lastModifiedDate,
                                                                 u.createdBy as createdBy,
                                                                     u.lastModifiedBy as lastModifiedBy
-                        from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')""", countQuery = "select count(*) from User u where u.email like concat('',:q, '%') or u.login like concat('',:q, '%')")
-        Page<PublishUserProjection> fetchAllUser(Pageable pageable, @Param("q") String q);
+                        from User u
+                        left join u.role r
+                        where r.name in :names and
+                        (u.email like concat('%',:q, '%') or u.login like concat('%',:q, '%'))""", countQuery = "select count(u) from User u left join u.role r where r.name in :names and (u.email like concat('%',:q, '%') or u.login like concat('%',:q, '%'))")
+        Page<PublishUserProjection> fetchAllStaffUser(Pageable pageable, @Param("q") String q,
+                        @Param("names") List<String> names);
 
         @Query(value = "select exists(select 1 from User u join u.role r where r.id = :roleId)")
         boolean existByRoleId(@Param("roleId") Integer roleId);

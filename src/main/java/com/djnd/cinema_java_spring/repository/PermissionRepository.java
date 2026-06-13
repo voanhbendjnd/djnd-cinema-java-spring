@@ -18,7 +18,7 @@ import com.djnd.cinema_java_spring.domain.enumeration.PermissionMethod;
 public interface PermissionRepository extends JpaRepository<Permission, Integer> {
     String USERS_PERMISSION_STRING_CACHE = "usersPermissionStringsById";
 
-    @Query(value = "select p from Permission p where p.name like concat('%', :q, '%')", countQuery = "select count(*) from Permission p where p.name like concat('%',:q ,'%')")
+    @Query(value = "select p from Permission p where p.name like concat('%', :q, '%')", countQuery = "select count(p) from Permission p where p.name like concat('%',:q ,'%')")
     Page<Permission> fetchAll(@Param("q") String q, Pageable pageable);
 
     boolean existsByName(String name);

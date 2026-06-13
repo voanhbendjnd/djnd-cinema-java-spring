@@ -97,7 +97,7 @@ public class UserResouce {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
     public ResponseEntity<ResultPaginationDTO> fetchAllPublishUser(@RequestParam(name = "q", required = false) String q,
             Pageable pageable) {
-        return ResponseEntity.ok(userService.getAllUserWithPagination(pageable, q));
+        return ResponseEntity.ok(userService.getAllStaffCinemaWithPagination(pageable, q));
     }
 
     @DeleteMapping("/users/{login}")

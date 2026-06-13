@@ -29,6 +29,6 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
     boolean existsByNameAndIdNot(String name, Integer id);
 
     @EntityGraph(attributePaths = { "permissions" })
-    @Query(value = "select r from Role r where r.name like concat('%', :q, '%')", countName = "select count(*) from Role r where r.name like concat('%', :q,'%')")
+    @Query(value = "select r from Role r where r.name like concat('%', :q, '%')", countName = "select count(r) from Role r where r.name like concat('%', :q,'%')")
     Page<Role> fetchAllWithPagination(Pageable pageable, @Param("q") String q);
 }
