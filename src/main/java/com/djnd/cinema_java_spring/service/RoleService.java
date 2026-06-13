@@ -16,6 +16,7 @@ import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.service.dto.PermissionDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.RoleDTO;
+import com.djnd.cinema_java_spring.service.projection.RoleUserProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
@@ -87,6 +88,11 @@ public class RoleService {
         }
         roleRepository.delete(role);
         this.clearCacheRole(role);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RoleUserProjection> getAllRole() {
+        return roleRepository.fetchAllRole();
     }
 
     @Transactional(readOnly = true)

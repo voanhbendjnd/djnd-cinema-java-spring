@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -12,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.Role;
+import com.djnd.cinema_java_spring.service.projection.RoleUserProjection;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Integer> {
@@ -31,4 +33,7 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
     @EntityGraph(attributePaths = { "permissions" })
     @Query(value = "select r from Role r where r.name like concat('%', :q, '%')", countName = "select count(r) from Role r where r.name like concat('%', :q,'%')")
     Page<Role> fetchAllWithPagination(Pageable pageable, @Param("q") String q);
+
+    @Query(value = "select r.id as id, r.name as name from Role r")
+    List<RoleUserProjection> fetchAllRole();
 }

@@ -1,5 +1,7 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.RoleService;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.RoleDTO;
+import com.djnd.cinema_java_spring.service.projection.RoleUserProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 
@@ -87,9 +90,17 @@ public class RoleResource {
 
     @GetMapping
     @ApiMessage("Fetch all role with pagination")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")") // get from security context
     public ResponseEntity<ResultPaginationDTO> fetchAllRole(Pageable pageable,
             @RequestParam(name = "q", required = false) String q) {
         return ResponseEntity.ok(roleService.fetchAllWithPagination(pageable, q));
+    }
+
+    @GetMapping("/user")
+    @ApiMessage("Fetch all role")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")") // get from security context
+    public ResponseEntity<List<RoleUserProjection>> getAllRole() {
+        return ResponseEntity.ok(roleService.getAllRole());
     }
 
 }
