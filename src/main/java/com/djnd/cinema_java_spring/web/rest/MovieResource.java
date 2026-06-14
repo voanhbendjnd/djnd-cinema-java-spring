@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,6 +30,7 @@ import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -102,7 +104,10 @@ public class MovieResource {
         }
         validDataMovie(movieDTO);
         var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(), FileService.moviePoster);
-        movieDTO.setPosterUrl(posterUrlMoved);
+        if (posterUrlMoved != null) {
+            movieDTO.setPosterUrl(posterUrlMoved);
+
+        }
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.updateMovie(movieDTO));
     }
 
@@ -112,5 +117,14 @@ public class MovieResource {
     public ResponseEntity<ResultPaginationDTO> fetchAllMovieWithPagination(
             @RequestParam(name = "q", required = true) String q, Pageable pageable) {
         return ResponseEntity.ok(movieFacadeService.getAllMovieWithPagination(pageable, q));
+    }
+
+    @GetMapping("/{id}")
+    @ApiMessage("Fetch movie by Id")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<AdminMovieDTO> fetchMovieById(@Positive @PathVariable("id") Integer id) {
+        if (id == null)
+            throw new RequestInvalidException("Movie ID missing!");
+        return ResponseEntity.ok(movieFacadeService.fetchById(id));
     }
 }

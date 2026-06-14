@@ -38,7 +38,7 @@ public class MovieFacadeService {
         }
         if (movieDTO.getReleaseDate() != null) {
             if (movieDTO.getReleaseDate().isBefore(LocalDateTime.now())) {
-                throw new RequestInvalidException("Release date is after current date!");
+                throw new RequestInvalidException("Release date is before current date!");
             }
         }
 
@@ -54,8 +54,8 @@ public class MovieFacadeService {
             throw new RequestInvalidException("Duration must be greater 0!");
         }
         if (movieDTO.getReleaseDate() != null) {
-            if (movieDTO.getReleaseDate().isAfter(LocalDateTime.now())) {
-                throw new RequestInvalidException("Release date is after current date!");
+            if (movieDTO.getReleaseDate().isBefore(LocalDateTime.now())) {
+                throw new RequestInvalidException("Release date is before current date!");
             }
         }
         movie.setDescription(movieDTO.getDescription());
@@ -83,6 +83,11 @@ public class MovieFacadeService {
 
     public String saveTempFile(MultipartFile file) throws URISyntaxException, IOException {
         return fileService.getNameFileAtTemp(file);
+    }
+
+    public AdminMovieDTO fetchById(Integer id) {
+        var movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
+        return toAdminMovieDTO(movie);
     }
 
     private AdminMovieDTO toAdminMovieDTO(Movie movie) {

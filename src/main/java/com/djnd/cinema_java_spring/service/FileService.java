@@ -24,7 +24,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 public class FileService {
     @Value("${djnd.upload-file.base-uri}")
     private String absolutePathURLServer;
-    public static final String moviePoster = "movie-poster";
+    public static final String moviePoster = "movie-posters";
     public static final String movieTemp = "movie-temps";
 
     public String getNameFileAtTemp(MultipartFile file) throws URISyntaxException, IOException {
@@ -53,7 +53,8 @@ public class FileService {
             Files.move(tempPath, lastPath, StandardCopyOption.REPLACE_EXISTING);
             return Paths.get(to).resolve(fileName).toString().replace("\\", "/");
         } else {
-            throw new IOException("Temp file does not exist: " + tempPath);
+            return null;
+            // throw new IOException("Temp file does not exist: " + tempPath);
         }
     }
 
