@@ -54,7 +54,7 @@ public class SecurityConfiguration {
                 "/storage/**",
                 "/api/v1/search/**",
                 "/ws/**",
-
+                "/api/v1/files/**"
         };
         http
                 .cors(cors -> cors.configurationSource(corsConfig))

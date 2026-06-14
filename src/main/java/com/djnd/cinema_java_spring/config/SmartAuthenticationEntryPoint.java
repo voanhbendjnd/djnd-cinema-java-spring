@@ -2,7 +2,6 @@ package com.djnd.cinema_java_spring.config;
 
 import java.io.IOException;
 
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
