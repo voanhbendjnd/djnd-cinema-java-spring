@@ -45,6 +45,8 @@ public class Seat extends AbstractAuditingEntity<Integer> implements Serializabl
     Room room;
     @Column(name = "seat_row", length = 5, nullable = false)
     String seatRow;
+    @Column(name = "seat_no", length = 5, nullable = false)
+    Integer seatNo;
     @Enumerated(EnumType.STRING)
     @NotNull
     @Column(name = "type", nullable = false)

@@ -5,6 +5,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import com.djnd.cinema_java_spring.domain.enumeration.RoomStatus;
+import com.djnd.cinema_java_spring.domain.enumeration.RoomType;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -50,9 +51,11 @@ public class Room extends AbstractAuditingEntity<Integer> implements Serializabl
     @NotNull
     @Column(name = "status", nullable = false)
     RoomStatus status = RoomStatus.ACTIVE;
+    @Column(name = "type", nullable = false)
+    @Enumerated(EnumType.STRING)
+    RoomType type;
     @OneToMany(mappedBy = "room")
     List<Seat> seats;
-
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Showtime> showtimes;
 
