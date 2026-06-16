@@ -51,14 +51,14 @@ public class UserService {
         userRepository.findOneByLogin(userDTO.getLogin().toLowerCase()).ifPresent(existingUser -> {
             boolean removed = this.removeNoneActivatedUser(existingUser);
             if (!removed) {
-                throw new UsernameAlreadyUsedException("Email or login already used!");
+                throw new UsernameAlreadyUsedException("Username already used!");
             }
         });
         if (userDTO.getEmail() != null) {
             userRepository.findOneByEmail(userDTO.getEmail().toLowerCase()).ifPresent(existingUser -> {
                 boolean removed = this.removeNoneActivatedUser(existingUser);
                 if (!removed) {
-                    throw new UsernameAlreadyUsedException("Email or login already used");
+                    throw new UsernameAlreadyUsedException("Email already used!");
                 }
             });
         }

@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -11,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.Room;
+import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
 
 @Repository
 public interface RoomRepository extends JpaRepository<Room, Integer> {
@@ -23,4 +25,11 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
     @EntityGraph(attributePaths = { "seats" })
     @Query(value = "select r from Room r where r.id = :roomId")
     Optional<Room> findWithDetailSeatById(@Param("roomId") Integer roomId);
+
+    int countByIdIn(List<Integer> ids);
+
+    List<Room> findByIdIn(List<Integer> ids);
+
+    @Query(value = "select r.id as is, r.name as name from Room r")
+    List<RoomNameProjection> findAllRoomAvailable();
 }

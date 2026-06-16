@@ -23,9 +23,13 @@ import com.djnd.cinema_java_spring.domain.enumeration.MovieGenre;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieStatus;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.FileService;
+import com.djnd.cinema_java_spring.service.RoomService;
 import com.djnd.cinema_java_spring.service.dto.AdminMovieDTO;
+import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
+import com.djnd.cinema_java_spring.service.dto.MovieScheduleDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.facade.MovieFacadeService;
+import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 
@@ -42,6 +46,7 @@ import lombok.experimental.FieldDefaults;
 public class MovieResource {
     final MovieFacadeService movieFacadeService;
     final FileService fileService;
+    final RoomService roomService;
 
     private boolean isValidFileImage(MultipartFile file) {
         var fileName = file.getOriginalFilename();
@@ -83,7 +88,7 @@ public class MovieResource {
     @PostMapping
     @ApiMessage("Create new movie")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
-    public ResponseEntity<AdminMovieDTO> createMovie(@Valid @RequestBody AdminMovieDTO movieDTO)
+    public ResponseEntity<AdminMovieDTO> createMovie(@Valid @RequestBody ComplexShowtimeRequestDTO movieDTO)
             throws URISyntaxException, IOException {
         if (movieDTO.getId() != null) {
             throw new RequestInvalidException("A new movie cannot already have an ID!");
@@ -94,10 +99,17 @@ public class MovieResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.createMovie(movieDTO));
     }
 
+    @GetMapping("/rooms")
+    @ApiMessage("Get all room available for movie")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<List<RoomNameProjection>> getRoomsForMovie() {
+        return ResponseEntity.ok(roomService.getAllRoomForInitMovie());
+    }
+
     @PutMapping
     @ApiMessage("Update movie")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
-    public ResponseEntity<AdminMovieDTO> updateMovie(@Valid @RequestBody AdminMovieDTO movieDTO)
+    public ResponseEntity<AdminMovieDTO> updateMovie(@Valid @RequestBody MovieScheduleDTO movieDTO)
             throws URISyntaxException, IOException {
         if (movieDTO.getId() == null) {
             throw new RequestInvalidException("Missing movie ID!");

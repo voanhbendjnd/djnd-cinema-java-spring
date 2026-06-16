@@ -18,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,7 +34,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Table(name = "showtimes")
+@Table(name = "showtimes", uniqueConstraints = @UniqueConstraint(columnNames = { "room_id", "start_date_time" }))
 public class Showtime extends AbstractAuditingEntity<Long> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -47,8 +48,8 @@ public class Showtime extends AbstractAuditingEntity<Long> implements Serializab
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id", nullable = false)
     Room room;
-    LocalDateTime startTime;
-    LocalDateTime enDateTime;
+    LocalDateTime startDateTime;
+    LocalDateTime endDateTime;
     @Builder.Default
     @Column(name = "ticket_price", nullable = false, precision = 12, scale = 2)
     BigDecimal ticketPrice = BigDecimal.ZERO;

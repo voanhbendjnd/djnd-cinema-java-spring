@@ -13,9 +13,13 @@ import com.djnd.cinema_java_spring.domain.entity.Movie;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieGenre;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieStatus;
 import com.djnd.cinema_java_spring.repository.MovieRepository;
+import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
 import com.djnd.cinema_java_spring.service.FileService;
 import com.djnd.cinema_java_spring.service.MovieDbService;
+import com.djnd.cinema_java_spring.service.ShowtimeService;
 import com.djnd.cinema_java_spring.service.dto.AdminMovieDTO;
+import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
+import com.djnd.cinema_java_spring.service.dto.MovieScheduleDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -31,8 +35,11 @@ public class MovieFacadeService {
     final FileService fileService;
     final MovieDbService movieDbService;
     final MovieRepository movieRepository;
+    final ShowtimeRepository showtimeRepository;
+    final ShowtimeService showtimeService;
 
-    public AdminMovieDTO createMovie(AdminMovieDTO movieDTO) {
+    @Transactional
+    public AdminMovieDTO createMovie(ComplexShowtimeRequestDTO movieDTO) {
         if (movieDTO.getDurationMinutes() < 1) {
             throw new RequestInvalidException("Duration must be greater 0!");
         }
@@ -41,13 +48,14 @@ public class MovieFacadeService {
                 throw new RequestInvalidException("Release date is before current date!");
             }
         }
-
         Movie movieSaved = movieDbService.saveMovie(movieDTO);
+        movieDTO.setId(movieSaved.getId());
+        showtimeService.createComplexShowtimes(movieDTO);
         return this.toAdminMovieDTO(movieSaved);
     }
 
     @Transactional
-    public AdminMovieDTO updateMovie(AdminMovieDTO movieDTO) {
+    public AdminMovieDTO updateMovie(MovieScheduleDTO movieDTO) {
         var movie = movieRepository.findById(movieDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
         if (movieDTO.getDurationMinutes() < 1) {
@@ -56,6 +64,13 @@ public class MovieFacadeService {
         if (movieDTO.getReleaseDate() != null) {
             if (movieDTO.getReleaseDate().isBefore(LocalDateTime.now())) {
                 throw new RequestInvalidException("Release date is before current date!");
+            }
+        }
+        if (movieDTO.getStarDateTime() != null && movieDTO.getEndDateTime() != null && movieDTO.getRoomId() != null) {
+            boolean isOccupied = showtimeRepository.isRoomOccupied(movieDTO.getRoomId(), movieDTO.getStarDateTime(),
+                    movieDTO.getEndDateTime());
+            if (isOccupied) {
+                throw new RequestInvalidException("The room already has a screening schedule at this time!");
             }
         }
         movie.setDescription(movieDTO.getDescription());

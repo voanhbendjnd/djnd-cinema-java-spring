@@ -18,6 +18,7 @@ import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.RoomDTO;
 import com.djnd.cinema_java_spring.service.dto.RoomDetailDTO;
 import com.djnd.cinema_java_spring.service.dto.SeatDTO;
+import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
 import lombok.AccessLevel;
@@ -137,4 +138,7 @@ public class RoomService {
         return res;
     }
 
+    public List<RoomNameProjection> getAllRoomForInitMovie() {
+        return roomRepository.findAllRoomAvailable();
+    }
 }
