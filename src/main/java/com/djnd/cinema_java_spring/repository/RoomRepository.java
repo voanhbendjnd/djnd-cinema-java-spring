@@ -30,6 +30,6 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
     List<Room> findByIdIn(List<Integer> ids);
 
-    @Query(value = "select r.id as is, r.name as name from Room r")
+    @Query(value = "select r.id as id, r.name as name from Room r")
     List<RoomNameProjection> findAllRoomAvailable();
 }

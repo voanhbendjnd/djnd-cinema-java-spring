@@ -49,17 +49,21 @@ public class ShowtimeService {
                     LocalDateTime endTime = startTime.plusMinutes(durationClearUp);
                     boolean isOccupied = showtimeRepository.isRoomOccupied(roomDTO.getId(), startTime, endTime);
                     Room room = roomMaps.get(roomDTO.getId());
-                    if (isOccupied) {
-                        errorMessages.add(
-                                String.format("Room %s overlapping schedules at %s %s", room.getName(), date, time));
-                    } else {
-                        Showtime showtime = new Showtime();
-                        showtime.setRoom(room);
-                        showtime.setMovie(movie);
-                        showtime.setStartDateTime(startTime);
-                        showtime.setEndDateTime(endTime);
-                        showTimesToSave.add(showtime);
+                    if (room != null) {
+                        if (isOccupied) {
+                            errorMessages.add(
+                                    String.format("Room %s overlapping schedules at %s %s", room.getName(), date,
+                                            time));
+                        } else {
+                            Showtime showtime = new Showtime();
+                            showtime.setRoom(room);
+                            showtime.setMovie(movie);
+                            showtime.setStartDateTime(startTime);
+                            showtime.setEndDateTime(endTime);
+                            showTimesToSave.add(showtime);
+                        }
                     }
+
                 }
             }
         }
