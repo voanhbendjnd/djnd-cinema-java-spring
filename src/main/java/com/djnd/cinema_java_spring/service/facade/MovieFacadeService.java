@@ -19,7 +19,6 @@ import com.djnd.cinema_java_spring.service.MovieDbService;
 import com.djnd.cinema_java_spring.service.ShowtimeService;
 import com.djnd.cinema_java_spring.service.dto.AdminMovieDTO;
 import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
-import com.djnd.cinema_java_spring.service.dto.MovieScheduleDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -35,8 +34,8 @@ public class MovieFacadeService {
     final FileService fileService;
     final MovieDbService movieDbService;
     final MovieRepository movieRepository;
-    final ShowtimeRepository showtimeRepository;
     final ShowtimeService showtimeService;
+    final ShowtimeRepository showtimeRepository;
 
     @Transactional
     public AdminMovieDTO createMovie(ComplexShowtimeRequestDTO movieDTO) {
@@ -50,36 +49,51 @@ public class MovieFacadeService {
         }
         Movie movieSaved = movieDbService.saveMovie(movieDTO);
         movieDTO.setId(movieSaved.getId());
-        showtimeService.createComplexShowtimes(movieDTO);
+        if (!movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null
+                && !movieDTO.getRooms().isEmpty()) {
+            throw new RequestInvalidException(
+                    "Rooms and screenings can only be created after the movie has been shown!");
+        }
+        if (movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null) {
+            showtimeService.createComplexShowtimes(movieDTO);
+        }
         return this.toAdminMovieDTO(movieSaved);
     }
 
     @Transactional
-    public AdminMovieDTO updateMovie(MovieScheduleDTO movieDTO) {
+    public AdminMovieDTO updateMovie(ComplexShowtimeRequestDTO movieDTO) {
         var movie = movieRepository.findById(movieDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
         if (movieDTO.getDurationMinutes() < 1) {
             throw new RequestInvalidException("Duration must be greater 0!");
         }
-        if (movieDTO.getReleaseDate() != null) {
-            if (movieDTO.getReleaseDate().isBefore(LocalDateTime.now())) {
-                throw new RequestInvalidException("Release date is before current date!");
+        boolean hasScreenings = showtimeRepository.movieHasHadScreenings(movieDTO.getId());
+        if (hasScreenings) {
+            if (movie.getDurationMinutes() != movieDTO.getDurationMinutes()
+                    || !movie.getReleaseDate().isEqual(movieDTO.getReleaseDate())) {
+                throw new RequestInvalidException(
+                        "It is not possible to change the film's length and release date if the film has already been scheduled for screenings!");
             }
         }
-        if (movieDTO.getStarDateTime() != null && movieDTO.getEndDateTime() != null && movieDTO.getRoomId() != null) {
-            boolean isOccupied = showtimeRepository.isRoomOccupied(movieDTO.getRoomId(), movieDTO.getStarDateTime(),
-                    movieDTO.getEndDateTime());
-            if (isOccupied) {
-                throw new RequestInvalidException("The room already has a screening schedule at this time!");
-            }
+        if (!hasScreenings) {
+            movie.setDurationMinutes(movieDTO.getDurationMinutes());
+            movie.setReleaseDate(movieDTO.getReleaseDate());
         }
         movie.setDescription(movieDTO.getDescription());
+        movie.setTitle(movieDTO.getTitle());
         movie.setDirector(movieDTO.getDirector());
-        movie.setDurationMinutes(movieDTO.getDurationMinutes());
         movie.setGenre(MovieGenre.valueOf(movieDTO.getGenre()));
         movie.setPosterUrl(movieDTO.getPosterUrl());
-        movie.setReleaseDate(movieDTO.getReleaseDate());
         movie.setStatus(MovieStatus.valueOf(movieDTO.getStatus()));
+        movieDTO.setId(movie.getId());
+        if (!movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null
+                && !movieDTO.getRooms().isEmpty()) {
+            throw new RequestInvalidException(
+                    "Rooms and screenings can only be created after the movie has been shown!");
+        }
+        if (movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null) {
+            showtimeService.updateComplexShowtimes(movieDTO);
+        }
         return toAdminMovieDTO(movie);
     }
 
@@ -103,6 +117,13 @@ public class MovieFacadeService {
     public AdminMovieDTO fetchById(Integer id) {
         var movie = movieRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
         return toAdminMovieDTO(movie);
+    }
+
+    public ComplexShowtimeRequestDTO getMovieRoomsShowtimes(Integer id) {
+        var movie = movieRepository.findWithDetailById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
+        return showtimeService.toComplexShowtimeRequestDTO(movie);
+
     }
 
     private AdminMovieDTO toAdminMovieDTO(Movie movie) {

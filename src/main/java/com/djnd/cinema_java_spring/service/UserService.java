@@ -272,6 +272,20 @@ public class UserService {
         return res;
     }
 
+    public ResultPaginationDTO getAllCustomerWithPagination(Pageable pageable, String q) {
+        var res = new ResultPaginationDTO();
+        var meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        var page = userRepository.fetchAllUser(pageable, q != null ? q.toLowerCase() : "",
+                AuthoritiesConstants.CUSTOMER);
+        meta.setPages(page.getTotalPages());
+        meta.setTotal(page.getTotalElements());
+        res.setMeta(meta);
+        res.setResult(page.getContent());
+        return res;
+    }
+
     public UserSecurityCacheDTO getSecurityCache(User user) {
         var res = new UserSecurityCacheDTO();
         res.setEmail(user.getEmail());

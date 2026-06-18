@@ -26,7 +26,6 @@ import com.djnd.cinema_java_spring.service.FileService;
 import com.djnd.cinema_java_spring.service.RoomService;
 import com.djnd.cinema_java_spring.service.dto.AdminMovieDTO;
 import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
-import com.djnd.cinema_java_spring.service.dto.MovieScheduleDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.facade.MovieFacadeService;
 import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
@@ -109,17 +108,19 @@ public class MovieResource {
     @PutMapping
     @ApiMessage("Update movie")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
-    public ResponseEntity<AdminMovieDTO> updateMovie(@Valid @RequestBody MovieScheduleDTO movieDTO)
+    public ResponseEntity<AdminMovieDTO> updateMovie(@Valid @RequestBody ComplexShowtimeRequestDTO movieDTO)
             throws URISyntaxException, IOException {
         if (movieDTO.getId() == null) {
             throw new RequestInvalidException("Missing movie ID!");
         }
         validDataMovie(movieDTO);
-        var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(), FileService.moviePoster);
-        if (posterUrlMoved != null) {
-            movieDTO.setPosterUrl(posterUrlMoved);
-
+        if (movieDTO.getPosterUrl() != null) {
+            var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(), FileService.moviePoster);
+            if (posterUrlMoved != null) {
+                movieDTO.setPosterUrl(posterUrlMoved);
+            }
         }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.updateMovie(movieDTO));
     }
 
@@ -134,9 +135,9 @@ public class MovieResource {
     @GetMapping("/{id}")
     @ApiMessage("Fetch movie by Id")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
-    public ResponseEntity<AdminMovieDTO> fetchMovieById(@Positive @PathVariable("id") Integer id) {
+    public ResponseEntity<ComplexShowtimeRequestDTO> fetchMovieById(@Positive @PathVariable("id") Integer id) {
         if (id == null)
             throw new RequestInvalidException("Movie ID missing!");
-        return ResponseEntity.ok(movieFacadeService.fetchById(id));
+        return ResponseEntity.ok(movieFacadeService.getMovieRoomsShowtimes(id));
     }
 }

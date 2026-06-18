@@ -1,11 +1,10 @@
 package com.djnd.cinema_java_spring.security;
 
 import com.djnd.cinema_java_spring.service.dto.ResLoginDTO;
-import com.nimbusds.jose.util.Base64;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -35,19 +34,20 @@ public class SecurityUtils {
     private Long accessTokenExpiration;
     @Value("${djnd.jwt.refresh-token-validity-in-seconds}")
     private Long refreshTokenExpiration;
-
+    private final SecretKey jwtSecretKey;
     static {
         JWT_ALGORITHM = MacAlgorithm.HS512;
     }
 
-    public SecurityUtils(JwtEncoder jwtEncoder) {
+    public SecurityUtils(JwtEncoder jwtEncoder, SecretKey jwtSecretKey) {
         this.jwtEncoder = jwtEncoder;
+        this.jwtSecretKey = jwtSecretKey;
     }
 
-    private SecretKey getSecretKey() {
-        byte[] keyBytes = Base64.from(this.jwtKey).decode();
-        return Keys.hmacShaKeyFor(keyBytes);
-    }
+    // private SecretKey getSecretKey() {
+    // byte[] keyBytes = Base64.from(this.jwtKey).decode();
+    // return Keys.hmacShaKeyFor(keyBytes);
+    // }
 
     public String createAccessToken(String login, ResLoginDTO dto, String sessionId, Set<String> permissions) {
         ResLoginDTO.UserInsideToken userToken = new ResLoginDTO.UserInsideToken();
@@ -126,7 +126,7 @@ public class SecurityUtils {
 
     public Claims parseRefreshTokenIgnoreExpired(String token) {
         try {
-            return (Claims) Jwts.parserBuilder().setSigningKey(this.getSecretKey()).build().parseClaimsJws(token)
+            return (Claims) Jwts.parserBuilder().setSigningKey(jwtSecretKey).build().parseClaimsJws(token)
                     .getBody();
         } catch (ExpiredJwtException ex) {
             return ex.getClaims();
@@ -134,7 +134,7 @@ public class SecurityUtils {
     }
 
     public Claims parseRefreshToken(String token) {
-        return (Claims) Jwts.parserBuilder().setSigningKey(this.getSecretKey()).build().parseClaimsJws(token).getBody();
+        return (Claims) Jwts.parserBuilder().setSigningKey(jwtSecretKey).build().parseClaimsJws(token).getBody();
     }
 
     public String createRefreshToken(String login, ResLoginDTO dto) {

@@ -54,6 +54,7 @@ public class Showtime extends AbstractAuditingEntity<Long> implements Serializab
     @Column(name = "ticket_price", nullable = false, precision = 12, scale = 2)
     BigDecimal ticketPrice = BigDecimal.ZERO;
     @Enumerated(EnumType.STRING)
-    ShowtimeStatus status;
+    @Builder.Default
+    ShowtimeStatus status = ShowtimeStatus.ACTIVE;
 
 }

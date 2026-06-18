@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.Room;
+import com.djnd.cinema_java_spring.domain.enumeration.RoomStatus;
 import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
 
 @Repository
@@ -30,6 +31,6 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
     List<Room> findByIdIn(List<Integer> ids);
 
-    @Query(value = "select r.id as id, r.name as name from Room r")
-    List<RoomNameProjection> findAllRoomAvailable();
+    @Query(value = "select r.id as id, r.name as name from Room r where r.status = :status")
+    List<RoomNameProjection> findAllRoomAvailable(@Param("status") RoomStatus status);
 }

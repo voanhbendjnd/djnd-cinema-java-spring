@@ -95,6 +95,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Query(value = """
                                 select u.id as id, u.login as login,
                                                 u.name as name,
+                                                                                                                                u.activated as activated,
+
                                         u.email as email, u.gender as gender,
                                                 u.phone as phone, u.createdDate as createdDate,
                                                         u.lastModifiedDate as lastModifiedDate,
@@ -107,6 +109,22 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         Page<PublishUserProjection> fetchAllStaffUser(Pageable pageable, @Param("q") String q,
                         @Param("names") List<String> names);
 
+        @Query(value = """
+                                select u.id as id, u.login as login,
+                                                u.name as name,
+                                                                u.activated as activated,
+                                        u.email as email, u.gender as gender,
+                                                u.phone as phone, u.createdDate as createdDate,
+                                                        u.lastModifiedDate as lastModifiedDate,
+                                                                u.createdBy as createdBy,
+                                                                    u.lastModifiedBy as lastModifiedBy
+                        from User u
+                        left join u.role r
+                        where r.name = :name and
+                        (u.email like concat('%',:q, '%') or u.login like concat('%',:q, '%'))""", countQuery = "select count(u) from User u left join u.role r where r.name = :name and (u.email like concat('%',:q, '%') or u.login like concat('%',:q, '%'))")
+        Page<PublishUserProjection> fetchAllUser(Pageable pageable, @Param("q") String q, @Param("name") String name);
+
         @Query(value = "select exists(select 1 from User u join u.role r where r.id = :roleId)")
         boolean existByRoleId(@Param("roleId") Integer roleId);
+
 }

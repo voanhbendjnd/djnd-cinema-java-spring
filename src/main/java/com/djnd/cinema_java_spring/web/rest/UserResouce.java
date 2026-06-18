@@ -92,12 +92,22 @@ public class UserResouce {
 
     }
 
-    @GetMapping("/users")
-    @ApiMessage("Get all user with pagination")
+    @GetMapping("/users/employee")
+    @ApiMessage("Get all employee system with pagination")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
-    public ResponseEntity<ResultPaginationDTO> fetchAllPublishUser(@RequestParam(name = "q", required = false) String q,
+    public ResponseEntity<ResultPaginationDTO> fetchAllPublishEmployee(
+            @RequestParam(name = "q", required = false) String q,
             Pageable pageable) {
         return ResponseEntity.ok(userService.getAllStaffCinemaWithPagination(pageable, q));
+    }
+
+    @GetMapping("/users/customer")
+    @ApiMessage("Get all employee system with pagination")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<ResultPaginationDTO> fetchAllPublishCustomer(
+            @RequestParam(name = "q", required = false) String q,
+            Pageable pageable) {
+        return ResponseEntity.ok(userService.getAllCustomerWithPagination(pageable, q));
     }
 
     @DeleteMapping("/users/{login}")

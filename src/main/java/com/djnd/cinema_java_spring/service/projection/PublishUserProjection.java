@@ -17,6 +17,8 @@ public interface PublishUserProjection {
 
     String getPhone();
 
+    boolean isActivated();
+
     Instant getCreatedDate();
 
     Instant getLastModifiedDate();

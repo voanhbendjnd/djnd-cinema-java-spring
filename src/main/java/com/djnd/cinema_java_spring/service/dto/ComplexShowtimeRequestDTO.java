@@ -7,13 +7,19 @@ import java.time.LocalTime;
 import java.util.List;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 public class ComplexShowtimeRequestDTO extends AdminMovieDTO implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
@@ -25,6 +31,7 @@ public class ComplexShowtimeRequestDTO extends AdminMovieDTO implements Serializ
     @FieldDefaults(level = AccessLevel.PRIVATE)
     public static class RoomScheduleDTO {
         Integer id;
+        String name;
         List<DayScheduleDTO> days;
     }
 

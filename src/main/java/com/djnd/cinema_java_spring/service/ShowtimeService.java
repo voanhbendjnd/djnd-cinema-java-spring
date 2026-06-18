@@ -3,6 +3,9 @@ package com.djnd.cinema_java_spring.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -47,6 +50,7 @@ public class ShowtimeService {
                 for (var time : dayDTO.getStartTimes()) {
                     LocalDateTime startTime = LocalDateTime.of(date, time);
                     LocalDateTime endTime = startTime.plusMinutes(durationClearUp);
+
                     boolean isOccupied = showtimeRepository.isRoomOccupied(roomDTO.getId(), startTime, endTime);
                     Room room = roomMaps.get(roomDTO.getId());
                     if (room != null) {
@@ -68,8 +72,109 @@ public class ShowtimeService {
             }
         }
         if (!errorMessages.isEmpty()) {
-            throw new RequestInvalidException(errorMessages.stream().collect(Collectors.joining("[", "\n", "]")));
+            throw new RequestInvalidException(String.join("\n", errorMessages));
         }
         showtimeRepository.saveAll(showTimesToSave);
+    }
+
+    public void updateComplexShowtimes(ComplexShowtimeRequestDTO dto) {
+        Movie movie = movieRepository.findById(dto.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
+        List<Integer> targetRoomIds = dto.getRooms().stream().map(roomDTO -> roomDTO.getId()).toList();
+        this.deleteShowtimeExists(targetRoomIds, movie.getId());
+        int durationCleanUp = movie.getDurationMinutes() + 15;
+        List<LocalDate> allDates = dto.getRooms().stream()
+                .flatMap(room -> room.getDays().stream().map(x -> x.getDate())).distinct().toList();
+        LocalDate minDate = allDates.stream().min(LocalDate::compareTo).orElse(LocalDate.now());
+        LocalDate maxDate = allDates.stream().max(LocalDate::compareTo).orElse(LocalDate.now());
+
+        List<Showtime> existingShowtimes = showtimeRepository
+                .findConflictShowtimes(targetRoomIds, movie.getId(),
+                        minDate.atStartOfDay(),
+                        maxDate.plusDays(1).atStartOfDay());
+        Map<Integer, List<Showtime>> showtimeByRoomMap = existingShowtimes.stream()
+                .collect(Collectors.groupingBy(showtime -> showtime.getRoom().getId()));
+        var realRoomsMap = roomRepository.findByIdIn(targetRoomIds).stream()
+                .collect(Collectors.toMap(Room::getId, room -> room));
+        List<Showtime> showtimesToSave = new ArrayList<>();
+        List<String> errorMessages = new ArrayList<>();
+        for (var roomDTO : dto.getRooms()) {
+            List<Showtime> roomCoflicts = showtimeByRoomMap.getOrDefault(roomDTO.getId(), List.of());
+            for (var dayDTO : roomDTO.getDays()) {
+                for (var time : dayDTO.getStartTimes()) {
+                    LocalDateTime newStartTime = LocalDateTime.of(dayDTO.getDate(), time);
+                    LocalDateTime newEndTime = newStartTime.plusMinutes(durationCleanUp);
+                    boolean isOccupied = roomCoflicts.stream()
+                            .anyMatch(showtime -> newStartTime.isBefore(showtime.getEndDateTime())
+                                    && newEndTime.isAfter(showtime.getStartDateTime()));
+                    Room room = realRoomsMap.get(roomDTO.getId());
+                    if (room != null) {
+                        if (isOccupied) {
+                            errorMessages.add(
+                                    String.format("Room %s overlapping schedules at %s %s", room.getName(),
+                                            dayDTO.getDate(),
+                                            time));
+                        } else {
+                            Showtime showtime = new Showtime();
+                            showtime.setMovie(movie);
+                            showtime.setRoom(room);
+                            showtime.setStartDateTime(newStartTime);
+                            showtime.setEndDateTime(newEndTime);
+                            showtimesToSave.add(showtime);
+                        }
+                    }
+
+                }
+            }
+
+        }
+        if (!errorMessages.isEmpty()) {
+            throw new RequestInvalidException(String.join("\n", errorMessages));
+        }
+        showtimeRepository.saveAll(showtimesToSave);
+    }
+
+    public void deleteShowtimeExists(List<Integer> targetRoomIds, Integer movieId) {
+        showtimeRepository.deleteByMovieIdAndRoomIdIn(movieId, targetRoomIds);
+        showtimeRepository.flush();
+    }
+
+    public ComplexShowtimeRequestDTO toComplexShowtimeRequestDTO(Movie movie) {
+        var res = new ComplexShowtimeRequestDTO();
+        res.setDescription(movie.getDescription());
+        res.setDirector(movie.getDirector());
+        res.setDurationMinutes(movie.getDurationMinutes());
+        res.setGenre(movie.getGenre().toString());
+        res.setId(movie.getId());
+        res.setPosterUrl(movie.getPosterUrl());
+        res.setReleaseDate(movie.getReleaseDate());
+        res.setStatus(movie.getStatus().toString());
+        res.setTitle(movie.getTitle());
+        var showtimes = showtimeRepository.findByMovieId(movie.getId());
+        var treeRoomsAndShowtimes = showtimes.stream()
+                .collect(Collectors.groupingBy(Showtime::getRoom,
+                        Collectors.groupingBy(showtime -> showtime.getStartDateTime().toLocalDate(), Collectors
+                                .mapping(showtime -> showtime.getStartDateTime().toLocalTime(), Collectors.toList()))));
+        var roomSchedules = treeRoomsAndShowtimes.entrySet().stream().map(roomEntry -> {
+            Room room = roomEntry.getKey();
+            var daySchedules = roomEntry.getValue().entrySet().stream().map(dayEntry -> {
+                var dayDTO = new ComplexShowtimeRequestDTO.DayScheduleDTO();
+                dayDTO.setDate(dayEntry.getKey());
+                dayDTO.setStartTimes(dayEntry.getValue());
+                return dayDTO;
+            })
+                    .sorted(Comparator.comparing(ComplexShowtimeRequestDTO.DayScheduleDTO::getDate))
+                    .toList();
+
+            var roomDTO = new ComplexShowtimeRequestDTO.RoomScheduleDTO();
+            roomDTO.setId(room.getId());
+            roomDTO.setDays(daySchedules);
+            roomDTO.setName(room.getName());
+            return roomDTO;
+
+        })
+                .toList();
+        res.setRooms(roomSchedules);
+        return res;
     }
 }

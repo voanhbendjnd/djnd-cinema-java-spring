@@ -139,6 +139,6 @@ public class RoomService {
     }
 
     public List<RoomNameProjection> getAllRoomForInitMovie() {
-        return roomRepository.findAllRoomAvailable();
+        return roomRepository.findAllRoomAvailable(RoomStatus.ACTIVE);
     }
 }

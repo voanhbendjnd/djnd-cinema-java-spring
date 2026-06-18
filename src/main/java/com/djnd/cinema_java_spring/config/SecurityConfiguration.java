@@ -1,8 +1,6 @@
 package com.djnd.cinema_java_spring.config;
 
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -26,6 +24,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
+
+import io.jsonwebtoken.security.Keys;
 
 @Configuration
 @EnableWebSecurity
@@ -81,6 +81,7 @@ public class SecurityConfiguration {
                         // decode and check valid expire token -> jwt auth converter get permission ->
                         // security context
                         // if token invalid -> sap
+                        // encode bearer token
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
                         .authenticationEntryPoint(sap))
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -90,18 +91,23 @@ public class SecurityConfiguration {
 
     @Bean
     public JwtEncoder jwtEncoder() {
-        return new NimbusJwtEncoder(new ImmutableSecret<>(getSecretKey()));
+        return new NimbusJwtEncoder(new ImmutableSecret<>(jwtSecretKey()));
     }
 
-    private SecretKey getSecretKey() {
+    /**
+     * create secret key and check follow hs256, hs384, hs512
+     * 
+     * @return
+     */
+    @Bean
+    public SecretKey jwtSecretKey() {
         byte[] keyBytes = Base64.from(jwtKey).decode();
-        return new SecretKeySpec(keyBytes, 0, keyBytes.length,
-                SecurityUtils.JWT_ALGORITHM.getName());
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(getSecretKey())
+        NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(jwtSecretKey())
                 .macAlgorithm(SecurityUtils.JWT_ALGORITHM).build();
         return token -> {
             try {
