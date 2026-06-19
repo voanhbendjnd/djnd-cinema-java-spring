@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -40,4 +41,8 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
     @EntityGraph(attributePaths = { "seats" })
     @Query(value = "select r from Room r where r.id = :roomId")
     Optional<Room> findWithDetail(@Param("roomId") Integer roomId);
+
+    @Modifying
+    @Query(value = "delete from Room r where r.id = :roomId")
+    int deleteRoom(@Param("roomId") Integer roomId);
 }

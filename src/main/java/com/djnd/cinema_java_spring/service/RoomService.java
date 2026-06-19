@@ -104,6 +104,11 @@ public class RoomService {
         return seatsToSave;
     }
 
+    public void deleteRoom(Integer roomId) {
+        Room room = roomRepository.findById(roomId).orElseThrow(() -> new ResourceNotFoundException("Room not found!"));
+        roomRepository.delete(room);
+    }
+
     private List<Seat> getSeats(Integer totalRows, Integer totalCols, Room room) {
         var seatsToSave = new ArrayList<Seat>();
         for (char row = 'A'; row < 'A' + totalRows; row++) {

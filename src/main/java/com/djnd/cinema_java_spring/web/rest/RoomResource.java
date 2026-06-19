@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,6 +50,13 @@ public class RoomResource {
         } catch (Exception ex) {
             throw new RequestInvalidException("Room type invalid!");
         }
+    }
+
+    @DeleteMapping("/{id}")
+    @ApiMessage("Delete room by ID")
+    public ResponseEntity<Void> deleteRoom(@Positive @PathVariable("id") Integer roomId) {
+        roomService.deleteRoom(roomId);
+        return ResponseEntity.ok(null);
     }
 
     @PostMapping
