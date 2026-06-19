@@ -1,5 +1,8 @@
 package com.djnd.cinema_java_spring.service.dto;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,7 +18,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RoomDTO {
+public class RoomDTO implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     Integer id;
     @NotBlank(message = "Room name not found!")
     String name;

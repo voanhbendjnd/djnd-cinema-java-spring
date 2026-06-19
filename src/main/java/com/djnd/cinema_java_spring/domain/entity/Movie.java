@@ -62,4 +62,7 @@ public class Movie extends AbstractAuditingEntity<Integer> implements Serializab
     MovieStatus status = MovieStatus.UPCOMING;
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Showtime> showtimes;
+    @Column(name = "activated", nullable = false)
+    @Builder.Default
+    boolean activated = true;
 }

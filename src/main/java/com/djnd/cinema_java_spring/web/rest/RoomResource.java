@@ -7,6 +7,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -53,7 +54,7 @@ public class RoomResource {
     @PostMapping
     @ApiMessage("Create new room")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
-    public ResponseEntity<RoomDetailDTO> createRoom(@Valid @RequestBody RoomDTO roomDTO) {
+    public ResponseEntity<RoomDetailDTO> createRoom(@Valid @RequestBody RoomDetailDTO roomDTO) {
         if (roomDTO.getId() != null) {
             throw new RequestInvalidException("A new room cannot already have an ID!");
         }
@@ -63,6 +64,20 @@ public class RoomResource {
         isValidData(roomDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(roomService.createRoom(roomDTO));
 
+    }
+
+    @PutMapping
+    @ApiMessage("Update room")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<RoomDetailDTO> updateRoom(@Valid @RequestBody RoomDetailDTO roomDetailDTO) {
+        if (roomDetailDTO.getId() == null) {
+            throw new RequestInvalidException("Missing room ID request!");
+        }
+        if (roomRepository.roomNameIsExistAndIdNot(roomDetailDTO.getName(), roomDetailDTO.getId())) {
+            throw new RequestInvalidException("Room name already exist!");
+        }
+        isValidData(roomDetailDTO);
+        return ResponseEntity.ok(roomService.updateRoom(roomDetailDTO));
     }
 
     @GetMapping

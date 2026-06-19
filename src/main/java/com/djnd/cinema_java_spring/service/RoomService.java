@@ -1,8 +1,9 @@
 package com.djnd.cinema_java_spring.service;
 
-import com.djnd.cinema_java_spring.repository.SeatRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import com.djnd.cinema_java_spring.service.dto.RoomDTO;
 import com.djnd.cinema_java_spring.service.dto.RoomDetailDTO;
 import com.djnd.cinema_java_spring.service.dto.SeatDTO;
 import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
+import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
 import lombok.AccessLevel;
@@ -30,22 +32,76 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 @Transactional
 public class RoomService {
-    final SeatRepository seatRepository;
     final RoomRepository roomRepository;
 
-    public RoomDetailDTO createRoom(RoomDTO roomDTO) {
+    public RoomDetailDTO createRoom(RoomDetailDTO roomDTO) {
         Room room = new Room();
         room.setName(roomDTO.getName());
         room.setStatus(RoomStatus.valueOf(roomDTO.getStatus()));
         room.setType(RoomType.valueOf(roomDTO.getType()));
         room.setTotalSeats(roomDTO.getTotalCols() * roomDTO.getTotalRows());
-        room = roomRepository.save(room);
         if (roomDTO.getTotalCols() != null && roomDTO.getTotalRows() != null) {
-            var seats = this.getSeats(roomDTO.getTotalRows(), roomDTO.getTotalCols(), room);
-            seatRepository.saveAllAndFlush(seats);
-            room.setSeats(seats);
+            List<Seat> seats = this.generateSeats(roomDTO, room);
+            room.getSeats().addAll(seats);
+        }
+        room = roomRepository.save(room);
+        return this.toSeatingChart(room);
+    }
+
+    public RoomDetailDTO updateRoom(RoomDetailDTO roomDetailDTO) {
+        Room room = roomRepository.findWithDetail(roomDetailDTO.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found!"));
+        room.setName(roomDetailDTO.getName());
+        room.setStatus(RoomStatus.valueOf(roomDetailDTO.getStatus()));
+        room.setType(RoomType.valueOf(roomDetailDTO.getType()));
+        room.setTotalSeats(roomDetailDTO.getTotalCols() * roomDetailDTO.getTotalRows());
+        if (roomDetailDTO.getTotalCols() != null && roomDetailDTO.getTotalRows() != null) {
+            // start check logic booking ticket
+            // end check
+            room.getSeats().clear();
+            List<Seat> newSeats = this.generateSeats(roomDetailDTO, room);
+            room.getSeats().addAll(newSeats);
         }
         return this.toSeatingChart(room);
+
+    }
+
+    private List<Seat> generateSeats(RoomDetailDTO roomDetailDTO, Room room) {
+        List<Seat> seatsToSave = new ArrayList<>();
+        if (roomDetailDTO.getSeats() == null || roomDetailDTO.getSeats().isEmpty()) {
+            throw new RequestInvalidException("Not found any seat at this room!");
+        }
+        Map<String, SeatType> seatTypeMap = roomDetailDTO.getSeats().stream()
+                .collect(Collectors.toMap(seat -> seat.getSeatRow() + '-' + seat.getSeatNo(),
+                        seat -> SeatType.valueOf(seat.getType())));
+        for (char row = 'A'; row < 'A' + roomDetailDTO.getTotalRows(); row++) {
+            String rowStr = String.valueOf(row);
+            for (int no = 1; no <= roomDetailDTO.getTotalCols(); no++) {
+                Seat seat = new Seat();
+                seat.setSeatRow(rowStr);
+                seat.setSeatNo(no);
+                seat.setRoom(room);
+                String coordinateKey = rowStr + "-" + no;
+                SeatType dynamicType = seatTypeMap.get(coordinateKey);
+                if (dynamicType != null) {
+                    seat.setType(dynamicType);
+                } else {
+                    if (row >= 'D' && row <= 'H') {
+                        seat.setType(SeatType.VIP);
+                    } else if (row == 'J') {
+                        if (no == roomDetailDTO.getTotalRows() && no % 2 != 0) {
+                            seat.setType(SeatType.STANDARD);
+                        } else {
+                            seat.setType(SeatType.SWEETBOX);
+                        }
+                    } else {
+                        seat.setType(SeatType.STANDARD);
+                    }
+                }
+                seatsToSave.add(seat);
+            }
+        }
+        return seatsToSave;
     }
 
     private List<Seat> getSeats(Integer totalRows, Integer totalCols, Room room) {
@@ -92,15 +148,13 @@ public class RoomService {
                         .build();
             }).toList();
         }
-
-        return RoomDetailDTO.builder()
-
-                .id(room.getId())
-                .name(room.getName())
-                .status(room.getStatus().toString())
-                .type(room.getType().toString())
-                .seats(seats)
-                .build();
+        var roomDetail = new RoomDetailDTO();
+        roomDetail.setId(room.getId());
+        roomDetail.setName(room.getName());
+        roomDetail.setStatus(room.getStatus().toString());
+        roomDetail.setType(room.getType().toString());
+        roomDetail.setSeats(seats);
+        return roomDetail;
     }
 
     private RoomDTO toScreenTable(Room room, Integer totalRows) {

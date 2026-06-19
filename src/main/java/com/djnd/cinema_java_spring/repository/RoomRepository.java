@@ -23,6 +23,9 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
     @Query(value = "select exists(select 1 from Room r where lower(r.name) = lower(:name))")
     boolean roomNameIsExist(@Param("name") String name);
 
+    @Query(value = "select exists(select 1 from Room r where lower(r.name) = lower(:name) and r.id <> :roomId)")
+    boolean roomNameIsExistAndIdNot(@Param("name") String name, @Param("roomId") Integer roomId);
+
     @EntityGraph(attributePaths = { "seats" })
     @Query(value = "select r from Room r where r.id = :roomId")
     Optional<Room> findWithDetailSeatById(@Param("roomId") Integer roomId);
@@ -33,4 +36,8 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
 
     @Query(value = "select r.id as id, r.name as name from Room r where r.status = :status")
     List<RoomNameProjection> findAllRoomAvailable(@Param("status") RoomStatus status);
+
+    @EntityGraph(attributePaths = { "seats" })
+    @Query(value = "select r from Room r where r.id = :roomId")
+    Optional<Room> findWithDetail(@Param("roomId") Integer roomId);
 }

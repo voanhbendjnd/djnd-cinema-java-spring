@@ -2,6 +2,7 @@ package com.djnd.cinema_java_spring.domain.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.djnd.cinema_java_spring.domain.enumeration.RoomStatus;
@@ -54,8 +55,9 @@ public class Room extends AbstractAuditingEntity<Integer> implements Serializabl
     @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     RoomType type;
-    @OneToMany(mappedBy = "room")
-    List<Seat> seats;
+    @OneToMany(mappedBy = "room", orphanRemoval = true, cascade = CascadeType.ALL)
+    @Builder.Default
+    List<Seat> seats = new ArrayList<>();
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Showtime> showtimes;
 
