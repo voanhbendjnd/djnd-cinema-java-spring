@@ -3,6 +3,7 @@ package com.djnd.cinema_java_spring.domain.entity;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.djnd.cinema_java_spring.domain.enumeration.MovieGenre;
@@ -61,7 +62,8 @@ public class Movie extends AbstractAuditingEntity<Integer> implements Serializab
     @Enumerated(EnumType.STRING)
     MovieStatus status = MovieStatus.UPCOMING;
     @OneToMany(mappedBy = "movie", cascade = CascadeType.ALL, orphanRemoval = true)
-    List<Showtime> showtimes;
+    @Builder.Default
+    List<Showtime> showtimes = new ArrayList<>();
     @Column(name = "activated", nullable = false)
     @Builder.Default
     boolean activated = true;

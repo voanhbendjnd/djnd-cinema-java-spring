@@ -95,6 +95,7 @@ public class MovieFacadeService {
                     "Rooms and screenings can only be created after the movie has been shown!");
         }
         if (movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null) {
+
             showtimeService.updateComplexShowtimes(movieDTO);
         }
         return toAdminMovieDTO(movie);

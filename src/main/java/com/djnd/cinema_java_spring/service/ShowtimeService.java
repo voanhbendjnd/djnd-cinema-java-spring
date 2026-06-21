@@ -59,6 +59,9 @@ public class ShowtimeService {
     public void createComplexShowtimes(ComplexShowtimeRequestDTO dto) {
         Movie movie = movieRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
+        if (dto.getRooms().isEmpty()) {
+            movie.getShowtimes().clear();
+        }
         int durationClearUp = movie.getDurationMinutes() + 15;
         var showTimesToSave = new ArrayList<Showtime>();
         var errorMessages = new ArrayList<String>();
@@ -141,9 +144,14 @@ public class ShowtimeService {
     }
 
     public void updateComplexShowtimes(ComplexShowtimeRequestDTO dto) {
+
         Movie movie = movieRepository.findById(dto.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
+        if (dto.getRooms().isEmpty()) {
+            movie.getShowtimes().clear();
+        }
         List<Integer> targetRoomIds = dto.getRooms().stream().map(roomDTO -> roomDTO.getId()).toList();
+
         this.deleteShowtimeExists(targetRoomIds, movie.getId());
         int durationClearUp = movie.getDurationMinutes() + 15;
         List<LocalDate> allDates = dto.getRooms().stream()
