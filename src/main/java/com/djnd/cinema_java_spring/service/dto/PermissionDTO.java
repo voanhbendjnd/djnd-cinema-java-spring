@@ -2,6 +2,7 @@ package com.djnd.cinema_java_spring.service.dto;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.time.Instant;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AccessLevel;
@@ -30,4 +31,5 @@ public class PermissionDTO implements Serializable {
     String method;
     @NotBlank(message = "Module null!")
     String module;
+    Instant lastModifiedDate;
 }

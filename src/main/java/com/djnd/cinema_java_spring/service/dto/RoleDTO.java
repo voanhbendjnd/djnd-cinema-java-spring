@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.service.dto;
 
+import java.time.Instant;
 import java.util.List;
 
 import jakarta.validation.constraints.NotBlank;
@@ -22,6 +23,8 @@ public class RoleDTO {
     @NotBlank(message = "Role name null!")
     String name;
     String description;
+    Instant createdDate;
+    Instant lastModifiedDate;
     List<PermissionDTO> permissions;
 
 }

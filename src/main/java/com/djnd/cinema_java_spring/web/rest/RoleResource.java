@@ -58,7 +58,7 @@ public class RoleResource {
     @ApiMessage("Uppdate role")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")") // get from security context
     public ResponseEntity<RoleDTO> updateRole(@Valid @RequestBody RoleDTO roleDTO) {
-        if (roleDTO.getId() != null) {
+        if (roleDTO.getId() == null) {
             throw new RequestInvalidException("Role ID missing or not found!");
         }
         if (roleRepository.existsByNameAndIdNot(roleDTO.getName(), roleDTO.getId())) {

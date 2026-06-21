@@ -69,8 +69,11 @@ public class MovieFacadeService {
         }
         boolean hasScreenings = showtimeRepository.movieHasHadScreenings(movieDTO.getId());
         if (hasScreenings) {
-            if (movie.getDurationMinutes() != movieDTO.getDurationMinutes()
-                    || !movie.getReleaseDate().isEqual(movieDTO.getReleaseDate())) {
+            LocalDateTime entityRelease = movie.getReleaseDate().withNano(0);
+            LocalDateTime dtoRelease = movieDTO.getReleaseDate().withNano(0);
+
+            if (!movie.getDurationMinutes().equals(movieDTO.getDurationMinutes())
+                    || !entityRelease.isEqual(dtoRelease)) {
                 throw new RequestInvalidException(
                         "It is not possible to change the film's length and release date if the film has already been scheduled for screenings!");
             }

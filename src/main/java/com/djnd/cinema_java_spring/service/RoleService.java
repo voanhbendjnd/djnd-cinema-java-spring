@@ -50,7 +50,8 @@ public class RoleService {
                     .map(per -> entityManager
                             .getReference(Permission.class, per.getId()))
                     .toList();
-            role.setPermissions(proxies);
+            role.getPermissions().addAll(proxies);
+            // role.setPermissions(proxies);
         } else {
             role.setPermissions(new ArrayList<>());
         }
@@ -67,12 +68,14 @@ public class RoleService {
 
             int count = permissionRepository
                     .countByIdIn(roleDTO.getPermissions().stream().map(PermissionDTO::getId).toList());
-            if (count != role.getPermissions().size()) {
+            if (count != roleDTO.getPermissions().size()) {
                 throw new RequestInvalidException("Permission ID invalid!");
             }
+            role.getPermissions().clear();
             List<Permission> proxies = roleDTO.getPermissions().stream()
                     .map(per -> entityManager.getReference(Permission.class, per.getId())).toList();
-            role.setPermissions(proxies);
+            // role.setPermissions(proxies);
+            role.getPermissions().addAll(proxies);
         } else {
             role.setPermissions(new ArrayList<>());
         }
@@ -126,13 +129,16 @@ public class RoleService {
     public RoleDTO toRoleDTO(Role role) {
         var permissions = role
                 .getPermissions().stream().map(x -> PermissionDTO.builder().id(x.getId()).name(x.getName())
-                        .apiPath(x.getApiPath()).method(x.getMethod().toString()).module(x.getModule()).build())
+                        .apiPath(x.getApiPath()).method(x.getMethod().toString())
+                        .module(x.getModule()).build())
                 .toList();
         return RoleDTO.builder()
                 .id(role.getId())
                 .name(role.getName())
                 .description(role.getDescription())
                 .permissions(permissions)
+                .createdDate(role.getCreatedDate())
+                .lastModifiedDate(role.getLastModifiedDate())
                 .build();
 
     }

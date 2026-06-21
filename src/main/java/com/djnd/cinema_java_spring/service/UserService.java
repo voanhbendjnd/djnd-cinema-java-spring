@@ -47,6 +47,15 @@ public class UserService {
     final PasswordEncoder passwordEncoder;
     final RoleRepository roleRepository;
 
+    public void toggleActionActivated(Long userId, boolean isActivated) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        user.setActivated(isActivated);
+        if (!isActivated) {
+            this.clearUserCaches(user);
+            user.setSessionId(null);
+        }
+    }
+
     public AdminUserDTO registerUser(AdminUserDTO userDTO, String password) {
         userRepository.findOneByLogin(userDTO.getLogin().toLowerCase()).ifPresent(existingUser -> {
             boolean removed = this.removeNoneActivatedUser(existingUser);

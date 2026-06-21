@@ -79,6 +79,7 @@ public class PermissionService {
                 .apiPath(permission.getApiPath())
                 .name(permission.getName())
                 .module(permission.getModule())
+                .lastModifiedDate(permission.getLastModifiedDate())
                 .method(permission.getMethod().toString())
                 .build();
     }

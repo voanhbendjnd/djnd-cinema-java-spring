@@ -2,6 +2,7 @@ package com.djnd.cinema_java_spring.domain.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import org.hibernate.annotations.Cache;
 
@@ -39,7 +40,7 @@ public class Role extends AbstractAuditingEntity<Integer> implements Serializabl
     @ManyToMany
     @JoinTable(name = "permission_role", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
 
-    List<Permission> permissions;
+    List<Permission> permissions = new ArrayList<>();
     @OneToMany(mappedBy = "role")
     List<User> users;
 

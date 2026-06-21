@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -36,7 +37,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/admin")
-public class UserResouce {
+public class UserResource {
     final UserService userService;
     final UserRepository userRepository;
     final MailService mailService;
@@ -115,6 +116,16 @@ public class UserResouce {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")") // get from security context
     public ResponseEntity<Void> deleteUserByLogin(@PathVariable(name = "login") String login) {
         userService.deleteUser(login);
+        return ResponseEntity.ok(null);
+    }
+
+    @PatchMapping("/users/activated")
+    @ApiMessage("Toggle handle status account")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")") // get from security context
+    public ResponseEntity<Void> changeStatus(@RequestBody AdminUserDTO userDTO) {
+        if (userDTO.getId() == null)
+            throw new RequestInvalidException("User ID missing request!");
+        userService.toggleActionActivated(userDTO.getId(), userDTO.isActivated());
         return ResponseEntity.ok(null);
     }
 }
