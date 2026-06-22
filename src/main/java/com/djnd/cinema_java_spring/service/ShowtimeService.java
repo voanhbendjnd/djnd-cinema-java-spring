@@ -40,7 +40,8 @@ public class ShowtimeService {
         LocalDateTime newStartDateTime = LocalDateTime.of(dto.getDate(), dto.getTime());
         int durationClearUp = dto.getDuration() + 15;
         LocalDateTime newEndDateTime = newStartDateTime.plusMinutes(durationClearUp);
-        boolean isOcuppied = showtimeRepository.isRoomOccupied(dto.getRoomId(), newStartDateTime, newEndDateTime);
+        boolean isOcuppied = showtimeRepository.isRoomOccupied(dto.getRoomId(), newStartDateTime, newEndDateTime,
+                dto.getMovieId());
         if (isOcuppied) {
             throw new RequestInvalidException(
                     String.format("Start date time %s at %s is before release date time movie",
@@ -49,11 +50,11 @@ public class ShowtimeService {
 
     }
 
-    public List<LocalDateTime> getAllTimeAtDateByRoom(Integer roomId, LocalDate date) {
+    public List<LocalDateTime> getAllTimeAtDateByRoom(Integer roomId, LocalDate date, Integer movieId) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
-        return showtimeRepository.getAllStartTime(roomId, startOfDay, endOfDay);
+        return showtimeRepository.getAllStartTime(roomId, startOfDay, endOfDay, movieId);
     }
 
     public void createComplexShowtimes(ComplexShowtimeRequestDTO dto) {
@@ -81,7 +82,8 @@ public class ShowtimeService {
                                 startTime, roomDTO.getName()));
                         continue;
                     }
-                    boolean isOccupied = showtimeRepository.isRoomOccupied(roomDTO.getId(), startTime, endTime);
+                    boolean isOccupied = showtimeRepository.isRoomOccupied(roomDTO.getId(), startTime, endTime,
+                            movie.getId());
                     Room room = roomMaps.get(roomDTO.getId());
                     if (room != null) {
 

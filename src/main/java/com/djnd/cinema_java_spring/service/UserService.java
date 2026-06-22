@@ -26,6 +26,7 @@ import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
+import com.djnd.cinema_java_spring.service.dto.UserDTO;
 import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -54,6 +55,23 @@ public class UserService {
             this.clearUserCaches(user);
             user.setSessionId(null);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO getUserAdmin(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        UserDTO userDTO = new UserDTO();
+        userDTO.setCreatedBy(user.getCreatedBy());
+        userDTO.setCreatedDate(user.getCreatedDate());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setLogin(user.getLogin());
+        userDTO.setGender(user.getGender().toString());
+        userDTO.setId(user.getId());
+        userDTO.setLastModifiedBy(user.getLastModifiedBy());
+        userDTO.setLastModifiedDate(user.getLastModifiedDate());
+        userDTO.setName(user.getName());
+        userDTO.setPhone(user.getPhone());
+        return userDTO;
     }
 
     public AdminUserDTO registerUser(AdminUserDTO userDTO, String password) {
@@ -97,6 +115,10 @@ public class UserService {
     public AdminUserDTO createUser(AdminUserDTO userDTO) {
         Role role = this.roleRepository.findById(userDTO.getRoleId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found!"));
+        if (role.getName().equalsIgnoreCase(AuthoritiesConstants.CUSTOMER)) {
+            throw new RequestInvalidException(
+                    "You do not have create account with role customer at management employee!");
+        }
         User user = User.builder()
                 .login(userDTO.getLogin())
                 .email(userDTO.getEmail() != null ? userDTO.getEmail() : null)

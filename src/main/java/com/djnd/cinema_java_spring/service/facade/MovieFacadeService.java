@@ -38,7 +38,7 @@ public class MovieFacadeService {
     final ShowtimeRepository showtimeRepository;
 
     @Transactional
-    public AdminMovieDTO createMovie(ComplexShowtimeRequestDTO movieDTO) {
+    public AdminMovieDTO createMovie(ComplexShowtimeRequestDTO movieDTO) throws URISyntaxException, IOException {
         if (movieDTO.getDurationMinutes() < 1) {
             throw new RequestInvalidException("Duration must be greater 0!");
         }
@@ -57,11 +57,13 @@ public class MovieFacadeService {
         if (movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null) {
             showtimeService.createComplexShowtimes(movieDTO);
         }
+        var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(), FileService.moviePoster);
+        movieSaved.setPosterUrl(posterUrlMoved);
         return this.toAdminMovieDTO(movieSaved);
     }
 
     @Transactional
-    public AdminMovieDTO updateMovie(ComplexShowtimeRequestDTO movieDTO) {
+    public AdminMovieDTO updateMovie(ComplexShowtimeRequestDTO movieDTO) throws URISyntaxException, IOException {
         var movie = movieRepository.findById(movieDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Movie not found!"));
         if (movieDTO.getDurationMinutes() < 1) {
@@ -86,7 +88,7 @@ public class MovieFacadeService {
         movie.setTitle(movieDTO.getTitle());
         movie.setDirector(movieDTO.getDirector());
         movie.setGenre(MovieGenre.valueOf(movieDTO.getGenre()));
-        movie.setPosterUrl(movieDTO.getPosterUrl());
+        // movie.setPosterUrl(movieDTO.getPosterUrl());
         movie.setStatus(MovieStatus.valueOf(movieDTO.getStatus()));
         movieDTO.setId(movie.getId());
         if (!movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null
@@ -98,6 +100,21 @@ public class MovieFacadeService {
 
             showtimeService.updateComplexShowtimes(movieDTO);
         }
+        if (movieDTO.getPosterUrl() != null) {
+            if (!movie.getPosterUrl().equalsIgnoreCase(movieDTO.getPosterUrl())) {
+                var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(),
+                        FileService.moviePoster);
+                movie.setPosterUrl(posterUrlMoved);
+            }
+
+            // movieRepository.save(movie);
+            // int updated = movieRepository.updatePosterUrl(movieDTO.getId(),
+            // posterUrlMoved);
+            // if (updated <= 0) {
+            // throw new RequestInvalidException("Poster movie invalid!");
+            // }
+        }
+
         return toAdminMovieDTO(movie);
     }
 

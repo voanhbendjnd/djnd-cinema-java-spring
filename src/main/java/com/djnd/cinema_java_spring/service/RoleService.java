@@ -13,6 +13,7 @@ import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.repository.PermissionRepository;
 import com.djnd.cinema_java_spring.repository.RoleRepository;
 import com.djnd.cinema_java_spring.repository.UserRepository;
+import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.dto.PermissionDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.RoleDTO;
@@ -95,7 +96,7 @@ public class RoleService {
 
     @Transactional(readOnly = true)
     public List<RoleUserProjection> getAllRole() {
-        return roleRepository.fetchAllRole();
+        return roleRepository.fetchAllRole(AuthoritiesConstants.CUSTOMER.toUpperCase());
     }
 
     @Transactional(readOnly = true)

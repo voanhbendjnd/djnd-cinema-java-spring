@@ -29,7 +29,7 @@ public class MovieDbService {
                 .releaseDate(movieDTO.getReleaseDate())
                 .status(MovieStatus.valueOf(movieDTO.getStatus()))
                 .title(movieDTO.getTitle())
-                .posterUrl(movieDTO.getPosterUrl())
+                // .posterUrl(movieDTO.getPosterUrl())
                 .build();
         return movieRepository.save(movie);
     }

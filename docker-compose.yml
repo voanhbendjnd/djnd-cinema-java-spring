@@ -11,7 +11,7 @@ services:
     volumes:
       - ./mysql_data:/var/lib/mysql
 
-  redis-music:
+  redis-cinema:
     image: redis:alpine
     container_name: redis-cinema-local
     restart: always

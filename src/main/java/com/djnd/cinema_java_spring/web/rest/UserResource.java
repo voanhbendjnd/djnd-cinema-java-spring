@@ -22,6 +22,7 @@ import com.djnd.cinema_java_spring.service.MailService;
 import com.djnd.cinema_java_spring.service.UserService;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
+import com.djnd.cinema_java_spring.service.dto.UserDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
@@ -29,6 +30,7 @@ import com.djnd.cinema_java_spring.web.rest.vm.ManagedUserVM;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -109,6 +111,15 @@ public class UserResource {
             @RequestParam(name = "q", required = false) String q,
             Pageable pageable) {
         return ResponseEntity.ok(userService.getAllCustomerWithPagination(pageable, q));
+    }
+
+    @GetMapping("/users/{id}")
+    @ApiMessage("Get user by ID")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<UserDTO> getUserById(@Positive @PathVariable("id") Long userId) {
+        if (userId == null)
+            throw new RequestInvalidException("User ID missing!");
+        return ResponseEntity.ok(userService.getUserAdmin(userId));
     }
 
     @DeleteMapping("/users/{login}")

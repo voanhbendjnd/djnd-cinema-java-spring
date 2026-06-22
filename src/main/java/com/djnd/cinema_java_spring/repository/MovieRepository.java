@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,4 +21,8 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
     @EntityGraph(attributePaths = { "showtimes", "showtimes.room" })
     @Query(value = "select m from Movie m where m.id = :movieId")
     Optional<Movie> findWithDetailById(@Param("movieId") Integer movieId);
+
+    @Modifying
+    @Query(value = "update Movie m set m.posterUrl = :posterUrl where m.id = :movieId")
+    int updatePosterUrl(@Param("movieId") Integer movieId, @Param("posterUrl") String posterUrl);
 }

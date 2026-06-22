@@ -27,9 +27,11 @@ public class PermissionInterceptorConfig implements WebMvcConfigurer {
         String[] whiteList = {
                 // "/api/v1/admin/users/**"
         };
-        String[] securePatterns = { "/api/v1/users/**",
-                "/api/v1/roles/**",
-                "/api/v1/permissions/**" };
+        String[] securePatterns = {
+                "/api/admin/v1/**",
+                // "/api/admin/v1/roles/**",
+                // "/api/admin/v1/permissions/**",
+        };
         registry.addInterceptor(getPermissionInterceptor()).excludePathPatterns(whiteList)
                 .addPathPatterns(securePatterns);
         // registry.addInterceptor(getPermissionInterceptor()).addPathPatterns("/admin/**");

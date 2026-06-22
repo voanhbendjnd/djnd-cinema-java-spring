@@ -34,6 +34,6 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
     @Query(value = "select r from Role r where r.name like concat('%', :q, '%')", countName = "select count(r) from Role r where r.name like concat('%', :q,'%')")
     Page<Role> fetchAllWithPagination(Pageable pageable, @Param("q") String q);
 
-    @Query(value = "select r.id as id, r.name as name from Role r")
-    List<RoleUserProjection> fetchAllRole();
+    @Query(value = "select r.id as id, r.name as name from Role r where r.name != :name")
+    List<RoleUserProjection> fetchAllRole(@Param("name") String roleName);
 }

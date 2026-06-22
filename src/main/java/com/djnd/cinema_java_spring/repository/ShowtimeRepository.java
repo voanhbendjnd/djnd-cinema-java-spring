@@ -14,10 +14,11 @@ import com.djnd.cinema_java_spring.domain.entity.Showtime;
 
 @Repository
 public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
-        @Query(value = "select exists(select 1 from Showtime s where s.room.id = :roomId and :newStartDateTime < s.endDateTime and :newEndDateTime > s.startDateTime)")
+        @Query(value = "select exists(select 1 from Showtime s where s.room.id = :roomId and :newStartDateTime < s.endDateTime and :newEndDateTime > s.startDateTime and s.movie.id <> :movieId)")
         boolean isRoomOccupied(@Param("roomId") Integer roomId,
                         @Param("newStartDateTime") LocalDateTime newStartDateTime,
-                        @Param("newEndDateTime") LocalDateTime newEndDateTime);
+                        @Param("newEndDateTime") LocalDateTime newEndDateTime,
+                        @Param("movieId") Integer movieId);
 
         @EntityGraph(attributePaths = { "room" })
         List<Showtime> findByMovieId(Integer movieId);
@@ -32,9 +33,10 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
 
         void deleteByMovieIdAndRoomIdIn(Integer movieId, List<Integer> roomIds);
 
-        @Query(value = "select s.startDateTime from Showtime s where s.room.id = :roomId and s.startDateTime between :startOfDay and :endOfDay order by s.startDateTime asc")
+        @Query(value = "select s.startDateTime from Showtime s where s.room.id = :roomId and s.movie.id <> :movieId and s.startDateTime between :startOfDay and :endOfDay order by s.startDateTime asc")
         List<LocalDateTime> getAllStartTime(@Param("roomId") Integer roomId,
-                        @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
+                        @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay,
+                        @Param("movieId") Integer movieId);
 
         @Query(value = "select s from Showtime s where s.room.id = :roomId and s.startDateTime between :start and :end")
         List<Showtime> getAllShowtimesMovie(@Param("roomId") Integer roomId, @Param("start") LocalDateTime start,

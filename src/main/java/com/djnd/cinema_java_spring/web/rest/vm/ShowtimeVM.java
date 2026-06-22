@@ -16,4 +16,6 @@ public class ShowtimeVM {
     Integer roomId;
     @NotNull(message = "Room date not found!")
     LocalDate date;
+    @NotNull(message = "Movie ID not found!")
+    Integer movieId;
 }

@@ -40,6 +40,6 @@ public class ShowtimeResource {
     @ApiMessage("Get all start date time")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<List<LocalDateTime>> getAllStartDateTimeAtDateByRoom(@Valid @RequestBody ShowtimeVM vm) {
-        return ResponseEntity.ok(showtimeService.getAllTimeAtDateByRoom(vm.getRoomId(), vm.getDate()));
+        return ResponseEntity.ok(showtimeService.getAllTimeAtDateByRoom(vm.getRoomId(), vm.getDate(), vm.getMovieId()));
     }
 }

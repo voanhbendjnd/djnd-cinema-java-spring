@@ -14,6 +14,8 @@ import lombok.experimental.FieldDefaults;
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MovieRoomTimeDTORequest {
+    @NotNull(message = "Movie ID not found!")
+    Integer movieId;
     @NotNull(message = "Duration not found!")
     Integer duration;
     @NotNull(message = "Date not found!")

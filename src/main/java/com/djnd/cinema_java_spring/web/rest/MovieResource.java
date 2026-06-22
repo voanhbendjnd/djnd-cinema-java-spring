@@ -93,8 +93,10 @@ public class MovieResource {
             throw new RequestInvalidException("A new movie cannot already have an ID!");
         }
         validDataMovie(movieDTO);
-        var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(), FileService.moviePoster);
-        movieDTO.setPosterUrl(posterUrlMoved);
+        // var posterUrlMoved =
+        // fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(),
+        // FileService.moviePoster);
+        // movieDTO.setPosterUrl(posterUrlMoved);
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.createMovie(movieDTO));
     }
 
@@ -114,12 +116,14 @@ public class MovieResource {
             throw new RequestInvalidException("Missing movie ID!");
         }
         validDataMovie(movieDTO);
-        if (movieDTO.getPosterUrl() != null) {
-            var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(), FileService.moviePoster);
-            if (posterUrlMoved != null) {
-                movieDTO.setPosterUrl(posterUrlMoved);
-            }
-        }
+        // if (movieDTO.getPosterUrl() != null) {
+        // var posterUrlMoved =
+        // fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(),
+        // FileService.moviePoster);
+        // if (posterUrlMoved != null) {
+        // movieDTO.setPosterUrl(posterUrlMoved);
+        // }
+        // }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.updateMovie(movieDTO));
     }
