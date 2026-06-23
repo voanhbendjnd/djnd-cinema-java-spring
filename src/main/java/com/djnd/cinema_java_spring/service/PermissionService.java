@@ -6,11 +6,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.djnd.cinema_java_spring.domain.entity.Permission;
+import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.domain.enumeration.PermissionMethod;
 import com.djnd.cinema_java_spring.repository.PermissionRepository;
 import com.djnd.cinema_java_spring.service.dto.PermissionDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
+
+import java.util.List;
+
 import org.hibernate.SessionFactory;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +34,7 @@ public class PermissionService {
                 .apiPath(perDTO.getApiPath().toLowerCase())
                 .method(PermissionMethod.valueOf(perDTO.getMethod()))
                 .name(perDTO.getName().toUpperCase())
-                .module(perDTO.getModule().toLowerCase())
+                .module(perDTO.getModule().toUpperCase())
                 .build();
         return (this.toPermissionDTO(permissionRepository.save(newPermision)));
 
@@ -38,7 +42,7 @@ public class PermissionService {
 
     public PermissionDTO updatePermission(PermissionDTO perDTO) {
 
-        var permission = permissionRepository.findById(perDTO.getId())
+        var permission = permissionRepository.findWithDetailRoles(perDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Permission not found!"));
         permission.setApiPath(perDTO.getApiPath().toLowerCase());
         permission.setMethod(PermissionMethod.valueOf(perDTO.getMethod()));
@@ -46,7 +50,10 @@ public class PermissionService {
         permission.setModule(perDTO.getModule().toLowerCase());
         var savePermission = permissionRepository.save(permission);
         sessionFactory.getCache().evictEntityData(Permission.class, savePermission.getId());
-        this.clearCachePermission(savePermission);
+        List<Role> rolesByPermission = permission.getRoles();
+        rolesByPermission.forEach(role -> this.clearCachePermissionByRoleId(role.getId()));
+
+        // this.clearCachePermission(savePermission);
         return this.toPermissionDTO(savePermission);
 
     }
@@ -55,8 +62,15 @@ public class PermissionService {
         var permission = permissionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Permission not found!"));
         permissionRepository.delete(permission);
-        this.clearCachePermission(permission);
+        // this.clearCachePermission(permission);
         sessionFactory.getCache().evictEntityData(Permission.class, id);
+    }
+
+    private void clearCachePermissionByRoleId(Integer roleId) {
+        var cache = cacheManager.getCache(PermissionRepository.PERMISSIONS_BY_ROLE_ID);
+        if (cache != null) {
+            cache.evictIfPresent(roleId);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -84,11 +98,19 @@ public class PermissionService {
                 .build();
     }
 
-    private void clearCachePermission(Permission permission) {
+    public void clearCachePermissionByUserId(Long userId) {
         var cache = cacheManager.getCache(PermissionRepository.USERS_PERMISSION_STRING_CACHE);
         if (cache != null) {
-            cache.evictIfPresent(permission.getId());
+            cache.evictIfPresent(userId);
         }
     }
+
+    // private void clearCachePermission(Permission permission) {
+    // var cache =
+    // cacheManager.getCache(PermissionRepository.USERS_PERMISSION_STRING_CACHE);
+    // if (cache != null) {
+    // cache.evictIfPresent(permission.getId());
+    // }
+    // }
 
 }

@@ -44,7 +44,6 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 public class MovieResource {
     final MovieFacadeService movieFacadeService;
-    final FileService fileService;
     final RoomService roomService;
 
     private boolean isValidFileImage(MultipartFile file) {

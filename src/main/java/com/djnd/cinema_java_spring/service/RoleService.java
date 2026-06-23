@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ public class RoleService {
     final CacheManager cacheManager;
     final UserRepository userRepository;
     final EntityManager entityManager;
+    final CacheManager chacManager;
 
     public RoleDTO createRole(RoleDTO roleDTO) {
         var role = new Role();
@@ -60,6 +62,8 @@ public class RoleService {
         return toRoleDTO(role);
     }
 
+    // @CacheEvict(cacheNames = PermissionRepository.PERMISSIONS_BY_ROLE_ID, key =
+    // "#roleDTO.id")
     public RoleDTO updateRole(RoleDTO roleDTO) {
         var role = roleRepository.findById(roleDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Role not found!"));
@@ -81,16 +85,26 @@ public class RoleService {
             role.setPermissions(new ArrayList<>());
         }
         roleRepository.save(role);
+        this.clearCachePermissionByRoleId(roleDTO.getId());
         this.clearCacheRole(role);
         return toRoleDTO(role);
     }
 
+    private void clearCachePermissionByRoleId(Integer roleId) {
+        var cache = cacheManager.getCache(PermissionRepository.PERMISSIONS_BY_ROLE_ID);
+        if (cache != null) {
+            cache.evictIfPresent(roleId);
+        }
+    }
+
+    @CacheEvict(cacheNames = PermissionRepository.PERMISSIONS_BY_ROLE_ID, key = "#roleId")
     public void deleteRole(Integer roleId) {
         var role = roleRepository.findById(roleId).orElseThrow(() -> new ResourceNotFoundException("Role not found!"));
         if (userRepository.existByRoleId(roleId)) {
             throw new RequestInvalidException("Current role already has user used!");
         }
         roleRepository.delete(role);
+        this.clearCachePermissionByRoleId(roleId);
         this.clearCacheRole(role);
     }
 

@@ -36,6 +36,7 @@ public class ShowtimeService {
     final MovieRepository movieRepository;
     final RoomRepository roomRepository;
 
+    @Transactional(readOnly = true)
     public void checkScheduleConflictAtRoom(MovieRoomTimeDTORequest dto) {
         LocalDateTime newStartDateTime = LocalDateTime.of(dto.getDate(), dto.getTime());
         int durationClearUp = dto.getDuration() + 15;
@@ -50,6 +51,7 @@ public class ShowtimeService {
 
     }
 
+    @Transactional(readOnly = true)
     public List<LocalDateTime> getAllTimeAtDateByRoom(Integer roomId, LocalDate date, Integer movieId) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
@@ -110,7 +112,8 @@ public class ShowtimeService {
         showtimeRepository.saveAll(showTimesToSave);
     }
 
-    private void checkDurationAfterShowtime(List<LocalTime> times, int duration, LocalDate date, Integer roomId) {
+    @Transactional(readOnly = true)
+    public void checkDurationAfterShowtime(List<LocalTime> times, int duration, LocalDate date, Integer roomId) {
         record TimeBlock(LocalDateTime start, LocalDateTime end) {
         }
         List<TimeBlock> allBlocks = new ArrayList<>();
@@ -121,11 +124,12 @@ public class ShowtimeService {
             allBlocks.add(new TimeBlock(startNew, startNew.plusMinutes(durationClearUp)));
         }
         LocalDateTime startDate = date.minusDays(1).atStartOfDay();
-        LocalDateTime endDate = date.atTime(LocalTime.MAX);
+        LocalDateTime endDate = date.plusDays(2).atStartOfDay();
         List<Showtime> currentShowtimes = showtimeRepository.getAllShowtimesMovie(roomId, startDate, endDate);
         for (Showtime showtime : currentShowtimes) {
             // get showtime end date at current date
-            if (showtime.getEndDateTime().isAfter(date.atStartOfDay()))
+            if (showtime.getEndDateTime().isAfter(date.atStartOfDay()) &&
+                    showtime.getStartDateTime().isBefore(date.plusDays(1).atStartOfDay()))
                 allBlocks.add(
                         new TimeBlock(showtime.getStartDateTime(), showtime.getEndDateTime()));
         }
@@ -163,8 +167,9 @@ public class ShowtimeService {
 
         List<Showtime> existingShowtimes = showtimeRepository
                 .findConflictShowtimes(targetRoomIds, movie.getId(),
-                        minDate.atStartOfDay(),
-                        maxDate.plusDays(1).atStartOfDay());
+                        minDate.minusDays(1).atStartOfDay(),
+                        maxDate.plusDays(2).atStartOfDay());
+        // showtime : 5 AM
         Map<Integer, List<Showtime>> showtimeByRoomMap = existingShowtimes.stream()
                 .collect(Collectors.groupingBy(showtime -> showtime.getRoom().getId()));
         var realRoomsMap = roomRepository.findByIdIn(targetRoomIds).stream()

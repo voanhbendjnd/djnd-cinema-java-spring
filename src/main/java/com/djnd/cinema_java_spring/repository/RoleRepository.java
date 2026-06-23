@@ -18,6 +18,7 @@ import com.djnd.cinema_java_spring.service.projection.RoleUserProjection;
 @Repository
 public interface RoleRepository extends JpaRepository<Role, Integer> {
     String ROLES_BY_NAME_CACHE = "rolesByName";
+    String ROLE_ID_BY_USER_ID_CACHE = "roleIdByUserId";
 
     @Cacheable(cacheNames = ROLES_BY_NAME_CACHE, unless = "#result == null")
     Optional<Role> findOneByName(String name);
@@ -36,4 +37,5 @@ public interface RoleRepository extends JpaRepository<Role, Integer> {
 
     @Query(value = "select r.id as id, r.name as name from Role r where r.name != :name")
     List<RoleUserProjection> fetchAllRole(@Param("name") String roleName);
+
 }

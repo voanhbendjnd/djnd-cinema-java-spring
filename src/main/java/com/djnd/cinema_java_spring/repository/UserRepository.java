@@ -127,4 +127,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Query(value = "select exists(select 1 from User u join u.role r where r.id = :roleId)")
         boolean existByRoleId(@Param("roleId") Integer roleId);
 
+        @Cacheable(cacheNames = RoleRepository.ROLE_ID_BY_USER_ID_CACHE, unless = "#result==null")
+        @Query(value = "select u.role.id from User u where u.id = :userId")
+        Integer getRoleIdByUserId(@Param("userId") Long userId);
+
 }

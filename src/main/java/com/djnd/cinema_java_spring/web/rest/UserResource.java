@@ -51,9 +51,9 @@ public class UserResource {
         if (dto.getId() != null) {
             throw new RequestInvalidException("A new user cannot already have an ID");
         } else if (userRepository.findOneByLogin(dto.getLogin().toLowerCase()).isPresent()) {
-            throw new UsernameAlreadyUsedException("Login already exsit!");
+            throw new UsernameAlreadyUsedException("Username already exsit!");
         } else if (userRepository.findOneByEmail(dto.getEmail().toLowerCase()).isPresent()) {
-            throw new UsernameAlreadyUsedException("Login already exsit!");
+            throw new UsernameAlreadyUsedException("Email already exsit!");
         }
         if (dto.getPhone() != null) {
             if (userRepository.userExistByPhone(dto.getPhone()))

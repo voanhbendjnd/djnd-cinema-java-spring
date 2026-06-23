@@ -5,6 +5,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.HandlerMapping;
 
 import com.djnd.cinema_java_spring.repository.PermissionRepository;
+import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
 import com.djnd.cinema_java_spring.web.rest.errors.UserAccessDeniedException;
@@ -20,6 +21,7 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 public class PermissionInterceptor implements HandlerInterceptor {
     final PermissionRepository permissionRepository;
+    final UserRepository userRepository;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -29,12 +31,17 @@ public class PermissionInterceptor implements HandlerInterceptor {
         var userId = SecurityUtils.getCurrentUserIdOrNull();
         if (userId == null)
             throw new UnauthorizedException("You are not logged in!");
-        var userPermissionStringsSet = permissionRepository.findPermissionStringsByUserId(userId);
-        if (userPermissionStringsSet == null || userPermissionStringsSet.isEmpty()) {
+        var roleId = userRepository.getRoleIdByUserId(userId);
+        if (roleId == null)
+            throw new UnauthorizedException("User ID not found!");
+        var permissions = permissionRepository.getPermissionByRoleId(roleId);
+        // var userPermissionStringsSet =
+        // permissionRepository.findPermissionStringsByUserId(userId);
+        if (permissions == null || permissions.isEmpty()) {
             throw new UserAccessDeniedException("You do not have permission!");
         }
         String requiredPermission = apiPath + ":" + httpMethod;
-        if (!userPermissionStringsSet.contains(requiredPermission)) {
+        if (!permissions.contains(requiredPermission)) {
             throw new UserAccessDeniedException("You do not have permission to access this API!");
         }
         return true;

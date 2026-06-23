@@ -15,6 +15,7 @@ import com.djnd.cinema_java_spring.domain.enumeration.RoomStatus;
 import com.djnd.cinema_java_spring.domain.enumeration.RoomType;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
 import com.djnd.cinema_java_spring.repository.RoomRepository;
+import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.RoomDTO;
 import com.djnd.cinema_java_spring.service.dto.RoomDetailDTO;
@@ -33,6 +34,7 @@ import lombok.experimental.FieldDefaults;
 @Transactional
 public class RoomService {
     final RoomRepository roomRepository;
+    final ShowtimeRepository showtimeRepository;
 
     public RoomDetailDTO createRoom(RoomDetailDTO roomDTO) {
         Room room = new Room();
@@ -105,6 +107,10 @@ public class RoomService {
     }
 
     public void deleteRoom(Integer roomId) {
+        if (showtimeRepository.existsByRoomId(roomId)) {
+            throw new RequestInvalidException("Cannot delete this room cause room have showtime!");
+        }
+
         Room room = roomRepository.findById(roomId).orElseThrow(() -> new ResourceNotFoundException("Room not found!"));
         roomRepository.delete(room);
     }

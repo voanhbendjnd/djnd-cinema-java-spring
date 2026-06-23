@@ -52,7 +52,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                                                         "PERMISSIONS"));
                         permissionList
                                         .add(new Permission("DELETE_PERMISSION",
-                                                        Constants.VERSION_API + "/admin/permissions/admin/{id}",
+                                                        Constants.VERSION_API + "/admin/permissions/{id}",
                                                         PermissionMethod.DELETE,
                                                         "PERMISSIONS"));
                         permissionList.add(
@@ -73,10 +73,10 @@ public class DatabaseInitializer implements CommandLineRunner {
                                                         PermissionMethod.PUT,
                                                         "ROLES"));
                         permissionList.add(
-                                        new Permission("DELETE_ROLE", Constants.VERSION_API + "/admin/roles/admin/{id}",
+                                        new Permission("DELETE_ROLE", Constants.VERSION_API + "/admin/roles/{id}",
                                                         PermissionMethod.DELETE, "ROLES"));
                         permissionList.add(
-                                        new Permission("GET_ROLE", Constants.VERSION_API + "/admin/roles/admin/{id}",
+                                        new Permission("GET_ROLE", Constants.VERSION_API + "/admin/roles/{id}",
                                                         PermissionMethod.GET,
                                                         "ROLES"));
                         permissionList.add(
@@ -93,10 +93,10 @@ public class DatabaseInitializer implements CommandLineRunner {
                                                         PermissionMethod.PUT,
                                                         "USERS"));
                         permissionList.add(
-                                        new Permission("DELETE_USER", Constants.VERSION_API + "/admin/users/admin/{id}",
+                                        new Permission("DELETE_USER", Constants.VERSION_API + "/admin/users{id}",
                                                         PermissionMethod.DELETE, "USERS"));
                         permissionList.add(
-                                        new Permission("GET_USER", Constants.VERSION_API + "/admin/users/admin/{id}",
+                                        new Permission("GET_USER", Constants.VERSION_API + "/admin/users{id}",
                                                         PermissionMethod.GET,
                                                         "USERS"));
                         permissionList.add(
@@ -108,6 +108,11 @@ public class DatabaseInitializer implements CommandLineRunner {
                                                         Constants.VERSION_API + "/admin/users/{login}",
                                                         PermissionMethod.DELETE,
                                                         "USERS"));
+
+                        // customer list
+                        permissionList.add(new Permission("GET_ALL_CUSTOMER",
+                                        Constants.VERSION_API + "/api/admin/users/customer", PermissionMethod.GET,
+                                        "USERS"));
 
                         this.permissionRepository.saveAll(permissionList);
                 }
