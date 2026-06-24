@@ -1,5 +1,7 @@
 package com.djnd.cinema_java_spring.config;
 
+import java.util.List;
+
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,11 +23,13 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import com.djnd.cinema_java_spring.security.GuestAwareJwtDecoder;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
 
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 @EnableWebSecurity
@@ -45,22 +49,32 @@ public class SecurityConfiguration {
             HttpSecurity http,
             SmartAuthenticationEntryPoint sap,
             @Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfig,
-            JwtAuthenticationConverter jwtConverter
+            JwtAuthenticationConverter jwtConverter,
+            JwtDecoder baseJwtDecoder,
+            HttpServletRequest request
     // PublicEndpointFilter publicEndpointFilter
     ) throws Exception {
         String[] whiteList = {
-                // "/**",
                 "/error",
                 "/storage/**",
                 "/api/v1/search/**",
                 "/ws/**",
                 "/api/v1/files/**"
         };
+        List<String> publishEndpoints = List.of(Constants.VERSION_API + "/home/movies",
+                Constants.VERSION_API + "/account/register",
+                Constants.VERSION_API + "/auth/login",
+                Constants.VERSION_API + "/auth/refresh",
+                Constants.VERSION_API + "/account/activate/**",
+                Constants.VERSION_API + "/account/reset-password/init",
+                Constants.VERSION_API + "/account/reset-password/finish",
+                Constants.VERSION_API + "/files/**");
         http
                 .cors(cors -> cors.configurationSource(corsConfig))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         auth -> auth
+                                .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/home/movies").permitAll()
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/account/register")
                                 .permitAll()
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/login").permitAll()
@@ -73,7 +87,6 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST,
                                         Constants.VERSION_API + "/account/reset-password/finish")
                                 .permitAll()
-                                .requestMatchers(HttpMethod.POST, "/account/change-password").permitAll()
                                 .requestMatchers(whiteList).permitAll()
                                 .anyRequest().authenticated())
                 // check token when fe send request
@@ -82,7 +95,9 @@ public class SecurityConfiguration {
                         // security context
                         // if token invalid -> sap
                         // encode bearer token
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(
+                                jwtConverter)
+                                .decoder(new GuestAwareJwtDecoder(baseJwtDecoder, request, publishEndpoints)))
                         .authenticationEntryPoint(sap))
                 .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));

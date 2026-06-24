@@ -36,4 +36,5 @@ public class AdminMovieDTO implements Serializable {
     LocalDateTime releaseDate;
     String posterUrl;
     String status;
+    Integer sold;
 }

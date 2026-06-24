@@ -3,6 +3,7 @@ package com.djnd.cinema_java_spring.service.facade;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import com.djnd.cinema_java_spring.service.ShowtimeService;
 import com.djnd.cinema_java_spring.service.dto.AdminMovieDTO;
 import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
+import com.djnd.cinema_java_spring.service.projection.PublishMovieProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
@@ -118,6 +120,11 @@ public class MovieFacadeService {
         return toAdminMovieDTO(movie);
     }
 
+    @Transactional(readOnly = true)
+    public List<PublishMovieProjection> getAllMovieShowingPublish() {
+        return movieRepository.getPublishMovie(MovieStatus.SHOWING);
+    }
+
     public ResultPaginationDTO getAllMovieWithPagination(Pageable pageable, String q) {
         var res = new ResultPaginationDTO();
         var meta = new ResultPaginationDTO.Meta();
@@ -150,6 +157,7 @@ public class MovieFacadeService {
     private AdminMovieDTO toAdminMovieDTO(Movie movie) {
         return AdminMovieDTO.builder()
                 .id(movie.getId())
+                .sold(movie.getSold())
                 .description(movie.getDescription())
                 .director(movie.getDirector())
                 .durationMinutes(movie.getDurationMinutes())

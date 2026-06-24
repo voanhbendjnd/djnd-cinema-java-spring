@@ -20,6 +20,7 @@ import com.djnd.cinema_java_spring.repository.RoomRepository;
 import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
 import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.MovieRoomTimeDTORequest;
+import com.djnd.cinema_java_spring.service.projection.ShowtimeProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
@@ -52,11 +53,11 @@ public class ShowtimeService {
     }
 
     @Transactional(readOnly = true)
-    public List<LocalDateTime> getAllTimeAtDateByRoom(Integer roomId, LocalDate date, Integer movieId) {
+    public List<ShowtimeProjection> getAllScheduleRoomAndMovieTitle(Integer roomId, LocalDate date, Integer movieId) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(LocalTime.MAX);
 
-        return showtimeRepository.getAllStartTime(roomId, startOfDay, endOfDay, movieId);
+        return showtimeRepository.getAllScheduleRoomAndMovieTitle(roomId, startOfDay, endOfDay, movieId);
     }
 
     public void createComplexShowtimes(ComplexShowtimeRequestDTO dto) {

@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.Showtime;
+import com.djnd.cinema_java_spring.service.projection.ShowtimeProjection;
 
 @Repository
 public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
@@ -33,8 +34,8 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
 
         void deleteByMovieIdAndRoomIdIn(Integer movieId, List<Integer> roomIds);
 
-        @Query(value = "select s.startDateTime from Showtime s where s.room.id = :roomId and s.movie.id <> :movieId and s.startDateTime between :startOfDay and :endOfDay order by s.startDateTime asc")
-        List<LocalDateTime> getAllStartTime(@Param("roomId") Integer roomId,
+        @Query(value = "select s.startDateTime as startDateTime, s.endDateTime as endDateTime, m.title as title from Showtime s join s.movie m where s.room.id = :roomId and m.id <> :movieId and s.startDateTime between :startOfDay and :endOfDay order by s.startDateTime asc")
+        List<ShowtimeProjection> getAllScheduleRoomAndMovieTitle(@Param("roomId") Integer roomId,
                         @Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay,
                         @Param("movieId") Integer movieId);
 

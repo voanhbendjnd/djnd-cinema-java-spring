@@ -67,4 +67,7 @@ public class Movie extends AbstractAuditingEntity<Integer> implements Serializab
     @Column(name = "activated", nullable = false)
     @Builder.Default
     boolean activated = true;
+    @Builder.Default
+    Integer sold = 0;
+
 }

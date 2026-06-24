@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.ShowtimeService;
 import com.djnd.cinema_java_spring.service.dto.MovieRoomTimeDTORequest;
+import com.djnd.cinema_java_spring.service.projection.ShowtimeProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.vm.ShowtimeVM;
 
@@ -39,7 +40,8 @@ public class ShowtimeResource {
     @PostMapping
     @ApiMessage("Get all start date time")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
-    public ResponseEntity<List<LocalDateTime>> getAllStartDateTimeAtDateByRoom(@Valid @RequestBody ShowtimeVM vm) {
-        return ResponseEntity.ok(showtimeService.getAllTimeAtDateByRoom(vm.getRoomId(), vm.getDate(), vm.getMovieId()));
+    public ResponseEntity<List<ShowtimeProjection>> getAllStartDateTimeAtDateByRoom(@Valid @RequestBody ShowtimeVM vm) {
+        return ResponseEntity
+                .ok(showtimeService.getAllScheduleRoomAndMovieTitle(vm.getRoomId(), vm.getDate(), vm.getMovieId()));
     }
 }
