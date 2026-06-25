@@ -17,6 +17,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.User;
+import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
 import com.djnd.cinema_java_spring.service.projection.PublishUserProjection;
 
 @Repository

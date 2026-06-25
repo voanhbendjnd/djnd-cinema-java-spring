@@ -72,6 +72,8 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
     UserGender gender;
     @Column(name = "phone", length = 20, unique = true)
     String phone;
+    @Column(name = "avatar_url", length = 500)
+    String avatarUrl;
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "login_with", nullable = false)

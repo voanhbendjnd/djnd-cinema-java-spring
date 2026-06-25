@@ -17,6 +17,8 @@ public interface PublishUserProjection {
 
     String getPhone();
 
+    String getAvatarUrl();
+
     boolean isActivated();
 
     Instant getCreatedDate();

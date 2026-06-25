@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.djnd.cinema_java_spring.config.Constants;
+import com.djnd.cinema_java_spring.domain.entity.Customer;
 import com.djnd.cinema_java_spring.domain.entity.Permission;
 import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.domain.entity.User;
@@ -28,6 +29,7 @@ import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.UserDTO;
 import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
+import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
@@ -47,6 +49,7 @@ public class UserService {
     final CacheManager cacheManager;
     final PasswordEncoder passwordEncoder;
     final RoleRepository roleRepository;
+    final CustomerService customerService;
 
     public void toggleActionActivated(Long userId, boolean isActivated) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
@@ -107,6 +110,9 @@ public class UserService {
                 .langKey(userDTO.getLangKey() != null ? userDTO.getLangKey() : Constants.DEFAULT_LANGUAGE)
                 .role(role)
                 .build();
+        // start save customer
+        customerService.saveCustomerRegister(newUser);
+        // end save customer
         userRepository.save(newUser);
         this.clearUserCaches(newUser);
         return this.toAdminUserDTO(newUser);

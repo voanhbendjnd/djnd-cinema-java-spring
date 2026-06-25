@@ -38,4 +38,5 @@ public class Customer {
     @Column(name = "loyalty_points", nullable = false)
     @Builder.Default
     Integer loyaltyPoints = 0;
+
 }

@@ -16,10 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
+import com.djnd.cinema_java_spring.service.CustomerService;
 import com.djnd.cinema_java_spring.service.MailService;
 import com.djnd.cinema_java_spring.service.UserService;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.PasswordChangeDTO;
+import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -40,11 +42,18 @@ public class AccountResource {
     final UserService userService;
     final MailService mailService;
     final UserRepository userRepository;
+    final CustomerService customerService;
 
     private static class AccountResourceException extends ErrorResponseException {
         private AccountResourceException(String message) {
             super(HttpStatus.BAD_REQUEST, ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, message), null);
         }
+    }
+
+    @GetMapping("/info")
+    @ApiMessage("Get information account user already login")
+    public ResponseEntity<ProfileUserProjection> getInformationAccount() {
+        return ResponseEntity.ok(customerService.getInformationAccount());
     }
 
     @PostMapping("/register")
