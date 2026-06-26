@@ -9,7 +9,8 @@
 
 <body>
     <p th:text="#{email.activation.greeting(${user.login})}">Dear</p>
-    <p th:text="#{email.creation.text1}">Your Cinema account has been created, please click on the URL below to access
+    <p th:text="#{email.creation.text1}">Your Cinema account email already change, please click on the URL below to
+        access
         it:</p>
     <p>
         <a th:with="url=(@{|${baseUrl}/account/reset/finish?key=${user.resetKey}|})" th:href="${url}"

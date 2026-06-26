@@ -26,6 +26,23 @@ public class FileService {
     private String absolutePathURLServer;
     public static final String moviePoster = "movie-posters";
     public static final String movieTemp = "movie-temps";
+    public static final String avatar = "user-avatars";
+
+    public String getNameAvatarUrl(MultipartFile file) throws URISyntaxException, IOException {
+        var uploadPath = absolutePathURLServer + avatar;
+        var directoryPath = Paths.get(uploadPath);
+        Files.createDirectories(directoryPath);
+        var originalNameFile = file.getOriginalFilename();
+        if (originalNameFile == null) {
+            throw new IOException("File name invalid!");
+        }
+        var fileName = "djnd-" + System.currentTimeMillis() + ".webp";
+        var filePath = directoryPath.resolve(fileName);
+        try (InputStream inputStream = file.getInputStream()) {
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return avatar + "/" + fileName;
+    }
 
     public String getNameFileAtTemp(MultipartFile file) throws URISyntaxException, IOException {
         var uploadPath = absolutePathURLServer + movieTemp;

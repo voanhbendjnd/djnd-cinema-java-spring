@@ -17,7 +17,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.User;
-import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
 import com.djnd.cinema_java_spring.service.projection.PublishUserProjection;
 
 @Repository
@@ -132,4 +131,11 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Query(value = "select u.role.id from User u where u.id = :userId")
         Integer getRoleIdByUserId(@Param("userId") Long userId);
 
+        @Modifying
+        @Query(value = "update User u set u.avatarUrl = :avatarUrl where u.id = :userId")
+        int updateAvatarUser(@Param("userId") Long userId, @Param("avatarUrl") String avatarUrl);
+
+        @Modifying
+        @Query(value = "update User u set u.name = :name where u.id = :userId")
+        int updateNameUser(@Param("userId") Long userId, @Param("name") String name);
 }

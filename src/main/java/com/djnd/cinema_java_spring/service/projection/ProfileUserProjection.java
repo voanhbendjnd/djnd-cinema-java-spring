@@ -7,7 +7,7 @@ public interface ProfileUserProjection extends PublishUserProjection {
 
     String getAddress();
 
-    String getLoyaltyPoints();
+    Integer getLoyaltyPoints();
 
     Instant getDateOfBirth();
 }

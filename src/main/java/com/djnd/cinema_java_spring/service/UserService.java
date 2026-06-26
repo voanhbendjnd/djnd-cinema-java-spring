@@ -1,5 +1,7 @@
 package com.djnd.cinema_java_spring.service;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -13,9 +15,9 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.djnd.cinema_java_spring.config.Constants;
-import com.djnd.cinema_java_spring.domain.entity.Customer;
 import com.djnd.cinema_java_spring.domain.entity.Permission;
 import com.djnd.cinema_java_spring.domain.entity.Role;
 import com.djnd.cinema_java_spring.domain.entity.User;
@@ -26,10 +28,10 @@ import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
+import com.djnd.cinema_java_spring.service.dto.CustomerUserDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.UserDTO;
 import com.djnd.cinema_java_spring.service.dto.UserSecurityCacheDTO;
-import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
@@ -50,6 +52,31 @@ public class UserService {
     final PasswordEncoder passwordEncoder;
     final RoleRepository roleRepository;
     final CustomerService customerService;
+    final FileService fileService;
+
+    public void changeAvatarAccount(MultipartFile file) throws IOException, URISyntaxException {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new UnauthorizedException("You are not logged in!");
+        }
+        String fileName = fileService.getNameAvatarUrl(file);
+        int updated = userRepository.updateAvatarUser(userId, fileName);
+        if (updated <= 0) {
+            throw new ResourceNotFoundException("User not found!");
+        }
+        customerService.clearCacheCustomer(userId);
+
+    }
+
+    public void renameAccount(String name) {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null)
+            throw new UnauthorizedException("You are not logged in!");
+        if (userRepository.updateNameUser(userId, name) <= 0) {
+            throw new ResourceNotFoundException("User not found!");
+        }
+        customerService.clearCacheCustomer(userId);
+    }
 
     public void toggleActionActivated(Long userId, boolean isActivated) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
@@ -321,6 +348,22 @@ public class UserService {
         res.setMeta(meta);
         res.setResult(page.getContent());
         return res;
+    }
+
+    public void updateInformation(CustomerUserDTO customerDTO) {
+
+        User user = userRepository.findById(customerDTO.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        this.evictUserCache(user.getLogin(), user.getEmail());
+        customerService.clearCacheCustomer(customerDTO.getId());
+        if (customerDTO.getEmail() != null) {
+            user.setEmail(customerDTO.getEmail());
+        }
+        user.setGender(UserGender.valueOf(customerDTO.getGender()));
+        user.setPhone(customerDTO.getPhone());
+        user.getCustomer().setAddress(customerDTO.getAddress());
+        user.getCustomer().setIdentityCard(customerDTO.getIdentityCard());
+
     }
 
     public UserSecurityCacheDTO getSecurityCache(User user) {

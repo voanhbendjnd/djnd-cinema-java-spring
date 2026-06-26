@@ -1,30 +1,39 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.ErrorResponseException;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.djnd.cinema_java_spring.repository.UserRepository;
+import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.CustomerService;
 import com.djnd.cinema_java_spring.service.MailService;
 import com.djnd.cinema_java_spring.service.UserService;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
+import com.djnd.cinema_java_spring.service.dto.CustomerUserDTO;
 import com.djnd.cinema_java_spring.service.dto.PasswordChangeDTO;
-import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
+import com.djnd.cinema_java_spring.service.projection.AccountCustomerProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
+import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
 import com.djnd.cinema_java_spring.web.rest.errors.UsernameAlreadyUsedException;
 import com.djnd.cinema_java_spring.web.rest.vm.KeyAndPasswordVM;
 import com.djnd.cinema_java_spring.web.rest.vm.ManagedUserVM;
@@ -50,9 +59,54 @@ public class AccountResource {
         }
     }
 
+    @PostMapping("/change-avatar")
+    @ApiMessage("Change avatar account")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+
+    public ResponseEntity<Void> changeAvatar(@RequestPart("avatarUrl") MultipartFile file)
+            throws URISyntaxException, IOException {
+        userService.changeAvatarAccount(file);
+        return ResponseEntity.ok(null);
+    }
+
+    @PostMapping("/rename")
+    @ApiMessage("Rename account")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+
+    public ResponseEntity<Void> renameAccount(@RequestParam(name = "name", required = true) String name) {
+        userService.renameAccount(name);
+        return ResponseEntity.ok(null);
+    }
+
+    @PatchMapping("/change-info")
+    @ApiMessage("Edit information account")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+    public ResponseEntity<Void> editInformationAccount(@Valid @RequestBody CustomerUserDTO customerUserDTO) {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null)
+            throw new UnauthorizedException("Yoou are not logged in!");
+
+        if (userRepository.existsByEmailAndIdNot(customerUserDTO.getEmail().toLowerCase(), userId)) {
+            throw new RequestInvalidException("Email already exist!");
+        }
+        if (customerUserDTO.getPhone() != null) {
+            if (userRepository.existsByPhoneAndIdNot(customerUserDTO.getPhone(), userId)) {
+                throw new RequestInvalidException("Phone already exist!");
+            }
+
+        }
+        if (!ManagedUserVM.genderIsValid(customerUserDTO.getGender())) {
+            throw new RequestInvalidException("Gender invalid!");
+        }
+        customerUserDTO.setId(userId);
+        userService.updateInformation(customerUserDTO);
+        return ResponseEntity.ok(null);
+    }
+
     @GetMapping("/info")
     @ApiMessage("Get information account user already login")
-    public ResponseEntity<ProfileUserProjection> getInformationAccount() {
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+    public ResponseEntity<AccountCustomerProjection> getInformationAccount() {
         return ResponseEntity.ok(customerService.getInformationAccount());
     }
 
