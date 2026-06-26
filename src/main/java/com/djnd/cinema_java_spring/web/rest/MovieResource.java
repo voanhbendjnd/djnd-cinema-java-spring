@@ -2,9 +2,11 @@ package com.djnd.cinema_java_spring.web.rest;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,14 +21,16 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.djnd.cinema_java_spring.domain.entity.Showtime;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieGenre;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieStatus;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
-import com.djnd.cinema_java_spring.service.FileService;
 import com.djnd.cinema_java_spring.service.RoomService;
+import com.djnd.cinema_java_spring.service.ShowtimeService;
 import com.djnd.cinema_java_spring.service.dto.AdminMovieDTO;
 import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
+import com.djnd.cinema_java_spring.service.dto.ShowtimeDTO;
 import com.djnd.cinema_java_spring.service.facade.MovieFacadeService;
 import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
@@ -39,12 +43,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @RestController
-@RequestMapping("/api/v1/admin/movies")
+@RequestMapping("/api/v1")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
 public class MovieResource {
     final MovieFacadeService movieFacadeService;
     final RoomService roomService;
+    final ShowtimeService showtimeService;
 
     private boolean isValidFileImage(MultipartFile file) {
         var fileName = file.getOriginalFilename();
@@ -72,7 +77,14 @@ public class MovieResource {
         }
     }
 
-    @PostMapping("/upload-temp")
+    @GetMapping("/movies/{id}/showtimes")
+    @ApiMessage("Get showtime by movie and day")
+    public ResponseEntity<ShowtimeDTO> getShowtimeByMovieAndDay(@Positive @PathVariable("id") Integer movieId,
+            @RequestParam(name = "day", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate day) {
+        return ResponseEntity.ok(showtimeService.getShowtimeActiveAtDay(movieId, day));
+    }
+
+    @PostMapping("/admin/movies/upload-temp")
     @ApiMessage("Upload file to temp")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<String> uploadTempFile(@RequestPart("file") MultipartFile file)
@@ -83,7 +95,7 @@ public class MovieResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.saveTempFile(file));
     }
 
-    @PostMapping
+    @PostMapping("/admin/movies/")
     @ApiMessage("Create new movie")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<AdminMovieDTO> createMovie(@Valid @RequestBody ComplexShowtimeRequestDTO movieDTO)
@@ -99,14 +111,14 @@ public class MovieResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.createMovie(movieDTO));
     }
 
-    @GetMapping("/rooms")
+    @GetMapping("/admin/movies/rooms")
     @ApiMessage("Get all room available for movie")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<List<RoomNameProjection>> getRoomsForMovie() {
         return ResponseEntity.ok(roomService.getAllRoomForInitMovie());
     }
 
-    @PutMapping
+    @PutMapping("/admin/movies")
     @ApiMessage("Update movie")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<AdminMovieDTO> updateMovie(@Valid @RequestBody ComplexShowtimeRequestDTO movieDTO)
@@ -115,19 +127,11 @@ public class MovieResource {
             throw new RequestInvalidException("Missing movie ID!");
         }
         validDataMovie(movieDTO);
-        // if (movieDTO.getPosterUrl() != null) {
-        // var posterUrlMoved =
-        // fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(),
-        // FileService.moviePoster);
-        // if (posterUrlMoved != null) {
-        // movieDTO.setPosterUrl(posterUrlMoved);
-        // }
-        // }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.updateMovie(movieDTO));
     }
 
-    @GetMapping
+    @GetMapping("/admin/movies/")
     @ApiMessage("Fetch all movie with pagination")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<ResultPaginationDTO> fetchAllMovieWithPagination(

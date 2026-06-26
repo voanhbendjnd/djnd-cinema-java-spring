@@ -1,6 +1,5 @@
 package com.djnd.cinema_java_spring.web.rest;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;

@@ -74,10 +74,14 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(
                         auth -> auth
+                                // guest
                                 .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/home/movies").permitAll()
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/account/register")
                                 .permitAll()
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/login").permitAll()
+                                .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/movies/{id}/showtimes")
+                                .permitAll()
+                                // user
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/refresh").permitAll()
                                 .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/account/activate/**")
                                 .permitAll()
@@ -87,6 +91,7 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST,
                                         Constants.VERSION_API + "/account/reset-password/finish")
                                 .permitAll()
+
                                 .requestMatchers(whiteList).permitAll()
                                 .anyRequest().authenticated())
                 // check token when fe send request

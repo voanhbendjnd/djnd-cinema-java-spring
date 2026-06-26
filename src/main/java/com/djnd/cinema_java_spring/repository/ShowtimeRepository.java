@@ -2,7 +2,6 @@ package com.djnd.cinema_java_spring.repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.Showtime;
+import com.djnd.cinema_java_spring.domain.enumeration.ShowtimeStatus;
 import com.djnd.cinema_java_spring.service.projection.ShowtimeProjection;
 
 @Repository
@@ -44,4 +44,9 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
                         @Param("end") LocalDateTime end);
 
         boolean existsByRoomId(Integer roomId);
+
+        @EntityGraph(attributePaths = { "room" })
+        @Query(value = "select s from Showtime s where s.startDateTime >= :start and s.startDateTime < :end and s.movie.id = :movieId and s.status = :status")
+        List<Showtime> getAllShowtimeWithDay(@Param("movieId") Integer movieId, @Param("start") LocalDateTime start,
+                        @Param("end") LocalDateTime end, @Param("status") ShowtimeStatus status);
 }

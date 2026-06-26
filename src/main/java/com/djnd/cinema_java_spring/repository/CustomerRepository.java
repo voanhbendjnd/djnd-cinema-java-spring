@@ -10,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import com.djnd.cinema_java_spring.domain.entity.Customer;
 import com.djnd.cinema_java_spring.service.projection.AccountCustomerProjection;
-import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {

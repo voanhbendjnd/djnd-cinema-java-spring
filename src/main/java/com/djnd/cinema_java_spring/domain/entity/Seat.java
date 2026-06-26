@@ -2,7 +2,6 @@ package com.djnd.cinema_java_spring.domain.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.math.BigDecimal;
 
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
 

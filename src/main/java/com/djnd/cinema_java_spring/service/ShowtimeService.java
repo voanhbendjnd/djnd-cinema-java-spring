@@ -15,11 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import com.djnd.cinema_java_spring.domain.entity.Movie;
 import com.djnd.cinema_java_spring.domain.entity.Room;
 import com.djnd.cinema_java_spring.domain.entity.Showtime;
+import com.djnd.cinema_java_spring.domain.enumeration.ShowtimeStatus;
 import com.djnd.cinema_java_spring.repository.MovieRepository;
 import com.djnd.cinema_java_spring.repository.RoomRepository;
 import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
 import com.djnd.cinema_java_spring.service.dto.ComplexShowtimeRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.MovieRoomTimeDTORequest;
+import com.djnd.cinema_java_spring.service.dto.ShowtimeDTO;
 import com.djnd.cinema_java_spring.service.projection.ShowtimeProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -36,6 +38,26 @@ public class ShowtimeService {
     final ShowtimeRepository showtimeRepository;
     final MovieRepository movieRepository;
     final RoomRepository roomRepository;
+
+    public ShowtimeDTO getShowtimeActiveAtDay(Integer movieId, LocalDate date) {
+        LocalDateTime start = date.atStartOfDay();
+        LocalDateTime end = date.plusDays(1).atStartOfDay();
+        var showtimes = showtimeRepository.getAllShowtimeWithDay(movieId, start, end, ShowtimeStatus.ACTIVE);
+        var schedules = showtimes.stream()
+                .map(s -> {
+                    var resShowtime = new ShowtimeDTO.Schedule();
+                    resShowtime.setShowtimeId(s.getId());
+                    resShowtime.setStartDateTime(s.getStartDateTime());
+                    resShowtime.setEndDateTime(s.getEndDateTime());
+                    resShowtime.setRoomId(s.getRoom().getId());
+                    return resShowtime;
+                }).toList();
+        var res = new ShowtimeDTO();
+        res.setMovieId(movieId);
+        res.setSchedules(schedules);
+        return res;
+
+    }
 
     @Transactional(readOnly = true)
     public void checkScheduleConflictAtRoom(MovieRoomTimeDTORequest dto) {

@@ -9,7 +9,6 @@ import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.repository.CustomerRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.projection.AccountCustomerProjection;
-import com.djnd.cinema_java_spring.service.projection.ProfileUserProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
 
