@@ -23,5 +23,7 @@ public class ShowtimeDTO {
         LocalDateTime startDateTime;
         LocalDateTime endDateTime;
         Integer roomId;
+        Integer totalSeats;
+        Integer totalSoldSeats;
     }
 }

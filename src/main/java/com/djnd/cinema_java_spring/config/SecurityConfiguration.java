@@ -81,6 +81,8 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/login").permitAll()
                                 .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/movies/{id}/showtimes")
                                 .permitAll()
+                                .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/showtimes/{id}/seats")
+                                .permitAll()
                                 // user
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/refresh").permitAll()
                                 .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/account/activate/**")

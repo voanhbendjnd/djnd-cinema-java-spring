@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.djnd.cinema_java_spring.domain.entity.Showtime;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieGenre;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieStatus;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
@@ -80,8 +79,8 @@ public class MovieResource {
     @GetMapping("/movies/{id}/showtimes")
     @ApiMessage("Get showtime by movie and day")
     public ResponseEntity<ShowtimeDTO> getShowtimeByMovieAndDay(@Positive @PathVariable("id") Integer movieId,
-            @RequestParam(name = "day", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate day) {
-        return ResponseEntity.ok(showtimeService.getShowtimeActiveAtDay(movieId, day));
+            @RequestParam(name = "date", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(showtimeService.getShowtimeActiveAtDay(movieId, date));
     }
 
     @PostMapping("/admin/movies/upload-temp")
@@ -104,10 +103,6 @@ public class MovieResource {
             throw new RequestInvalidException("A new movie cannot already have an ID!");
         }
         validDataMovie(movieDTO);
-        // var posterUrlMoved =
-        // fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(),
-        // FileService.moviePoster);
-        // movieDTO.setPosterUrl(posterUrlMoved);
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.createMovie(movieDTO));
     }
 
@@ -131,7 +126,7 @@ public class MovieResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.updateMovie(movieDTO));
     }
 
-    @GetMapping("/admin/movies/")
+    @GetMapping("/admin/movies")
     @ApiMessage("Fetch all movie with pagination")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<ResultPaginationDTO> fetchAllMovieWithPagination(
@@ -139,7 +134,7 @@ public class MovieResource {
         return ResponseEntity.ok(movieFacadeService.getAllMovieWithPagination(pageable, q));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/admin/movies/{id}")
     @ApiMessage("Fetch movie by Id")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<ComplexShowtimeRequestDTO> fetchMovieById(@Positive @PathVariable("id") Integer id) {

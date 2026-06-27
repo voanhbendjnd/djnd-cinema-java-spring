@@ -4,9 +4,12 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.djnd.cinema_java_spring.domain.enumeration.ShowtimeStatus;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,6 +20,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -50,11 +54,11 @@ public class Showtime extends AbstractAuditingEntity<Long> implements Serializab
     Room room;
     LocalDateTime startDateTime;
     LocalDateTime endDateTime;
-    @Builder.Default
-    @Column(name = "ticket_price", nullable = false, precision = 12, scale = 2)
-    BigDecimal ticketPrice = BigDecimal.ZERO;
     @Enumerated(EnumType.STRING)
     @Builder.Default
     ShowtimeStatus status = ShowtimeStatus.ACTIVE;
+    @Builder.Default
+    @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<Ticket> tickets = new ArrayList<>();
 
 }

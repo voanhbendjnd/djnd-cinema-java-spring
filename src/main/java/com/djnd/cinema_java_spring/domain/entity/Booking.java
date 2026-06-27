@@ -2,11 +2,11 @@ package com.djnd.cinema_java_spring.domain.entity;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.djnd.cinema_java_spring.domain.enumeration.SeatStatus;
-import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
+import com.djnd.cinema_java_spring.domain.enumeration.BookingStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -23,42 +23,37 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
-@Entity
-@Table(name = "seats")
 @Getter
 @Setter
+@Entity
+@Table(name = "bookings")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-public class Seat extends AbstractAuditingEntity<Integer> implements Serializable {
+public class Booking extends AbstractAuditingEntity<Long> implements Serializable {
     @Serial
-    private static final long serialVersionUID = 1l;
+    private final static long serialVersionUID = 1L;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer id;
-    @ManyToOne(fetch = FetchType.LAZY)
+    Long id;
+    @Column(name = "booking_code", unique = true, nullable = false)
+    String bookingCode;
     @NotNull
-    @JoinColumn(name = "room_id", nullable = false)
-    Room room;
-    @Column(name = "seat_row", length = 5, nullable = false)
-    String seatRow;
-    @Column(name = "seat_no", length = 5, nullable = false)
-    Integer seatNo;
+    @Column(name = "total_amount", nullable = false)
+    BigDecimal totalAmount;
     @Enumerated(EnumType.STRING)
     @NotNull
-    @Column(name = "type", nullable = false)
-    SeatType type;
-    @Builder.Default
-    SeatStatus status = SeatStatus.ACTIVE;
-    @Builder.Default
-    @OneToMany(mappedBy = "seat", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Column(name = "status", nullable = false)
+    BookingStatus status;
+    @NotNull
+    @Column(name = "payment_method", nullable = false)
+    String paymentMethod;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    Customer customer;
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Ticket> tickets = new ArrayList<>();
 }

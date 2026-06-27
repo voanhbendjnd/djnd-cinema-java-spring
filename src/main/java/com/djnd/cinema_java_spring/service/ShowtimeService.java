@@ -50,6 +50,7 @@ public class ShowtimeService {
                     resShowtime.setStartDateTime(s.getStartDateTime());
                     resShowtime.setEndDateTime(s.getEndDateTime());
                     resShowtime.setRoomId(s.getRoom().getId());
+                    resShowtime.setTotalSeats(s.getRoom().getTotalSeats());
                     return resShowtime;
                 }).toList();
         var res = new ShowtimeDTO();
