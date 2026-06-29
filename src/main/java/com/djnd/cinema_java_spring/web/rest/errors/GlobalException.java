@@ -118,4 +118,22 @@ public class GlobalException {
         res.setStatusCode(HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(res);
     }
+
+    /**
+     * bad request
+     * 
+     * @param ex
+     * @return
+     */
+    @ExceptionHandler(value = { SeatOccupiedException.class })
+    public ResponseEntity<RestResponse<?>> handleBadRequestException(SeatOccupiedException ex) {
+        int statusCode = HttpStatus.BAD_REQUEST.value();
+        var res = new RestResponse<>();
+        res.setStatusCode(statusCode);
+        res.setError("Bad request!");
+        res.setMessage("Some of seats you chose have already been taken by others!");
+        res.setData(ex.getOccupiedSeatIds());
+        return ResponseEntity.status(statusCode).body(res);
+    }
+
 }

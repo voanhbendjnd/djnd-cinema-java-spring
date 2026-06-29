@@ -24,4 +24,6 @@ public interface SeatRepository extends JpaRepository<Seat, Integer> {
             order by s.seatRow asc, s.seatNo asc
             """)
     List<SeatLayoutDTO> getSeatLayoutByShowtime(@Param("showtimeId") Long showtimeId);
+
+    List<Seat> findByIdIn(List<Integer> seatIds);
 }

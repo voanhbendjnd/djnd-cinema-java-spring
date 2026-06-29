@@ -1,6 +1,7 @@
 package com.djnd.cinema_java_spring.domain.entity;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class Customer {
     @JoinColumn(name = "user_id")
     @MapsId
     User user;
-    Instant dateOfBirth;
+    LocalDate dateOfBirth;
     @Column(name = "address", length = 500)
     String address;
     @Column(name = "identity_card", length = 20)
