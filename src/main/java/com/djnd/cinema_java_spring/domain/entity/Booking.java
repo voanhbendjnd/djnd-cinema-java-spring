@@ -56,4 +56,7 @@ public class Booking extends AbstractAuditingEntity<Long> implements Serializabl
     Customer customer;
     @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Ticket> tickets = new ArrayList<>();
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<BookingDetail> bookingDetails;
 }

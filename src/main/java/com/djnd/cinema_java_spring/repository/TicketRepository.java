@@ -1,4 +1,4 @@
-package com.djnd.cinema_java_spring.service;
+package com.djnd.cinema_java_spring.repository;
 
 import java.util.List;
 

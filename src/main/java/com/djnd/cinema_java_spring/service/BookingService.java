@@ -2,6 +2,7 @@ package com.djnd.cinema_java_spring.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.djnd.cinema_java_spring.domain.entity.Booking;
+import com.djnd.cinema_java_spring.domain.entity.BookingDetail;
 import com.djnd.cinema_java_spring.domain.entity.Customer;
 import com.djnd.cinema_java_spring.domain.entity.Seat;
 import com.djnd.cinema_java_spring.domain.entity.Showtime;
@@ -29,6 +31,7 @@ import com.djnd.cinema_java_spring.repository.CustomerRepository;
 import com.djnd.cinema_java_spring.repository.SeatRepository;
 import com.djnd.cinema_java_spring.repository.ShowtimePriceRepository;
 import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
+import com.djnd.cinema_java_spring.repository.TicketRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.ResBookingDTO;
@@ -111,10 +114,18 @@ public class BookingService {
         }
         Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+        LocalDateTime now = LocalDateTime.now();
+        if (showtime.getStartDateTime().isBefore(now)) {
+            this.rollbackRedisSeats(showtimeKeyRedis, request.getSeatIds());
+            throw new RequestInvalidException("The movie had been shown!");
+
+        }
+
         List<Ticket> availableTickets = ticketRepository.findByShowtimeId(showtime.getId());
         List<Integer> availableSeatTickets = availableTickets.stream().map(x -> x.getSeat().getId()).toList();
         for (Integer seatId : seatIdAvaliables) {
             if (availableSeatTickets.contains(seatId)) {
+
                 errorMessages.add(String.format("Seat with ID %d already exist!", seatId));
             }
         }
@@ -131,7 +142,9 @@ public class BookingService {
         Map<SeatType, BigDecimal> priceSeatMap = priceMatrixList.stream()
                 .collect(Collectors.toMap(ShowtimePriceMatrix::getSeatType, ShowtimePriceMatrix::getFinalPrice));
         BigDecimal totalAmount = BigDecimal.ZERO;
-        List<Ticket> saveTickets = new ArrayList<>();
+        // List<Ticket> saveTickets = new ArrayList<>();
+        List<BookingDetail> bookingDetails = new ArrayList<>();
+
         Booking booking = new Booking();
         for (Seat seat : seats) {
             BigDecimal costSeat = priceSeatMap.get(seat.getType());
@@ -139,14 +152,21 @@ public class BookingService {
                 errorMessages.add("Cannot get price config for seat: " + seat.getSeatRow() + seat.getSeatNo()
                         + " [Type: " + seat.getType() + "]");
             } else {
+                BookingDetail detail = new BookingDetail();
+                detail.setBooking(booking);
+                detail.setPrice(costSeat);
+                detail.setShowtime(showtime);
+                detail.setSeat(seat);
+                bookingDetails.add(detail);
                 totalAmount = totalAmount.add(costSeat);
-                Ticket ticket = new Ticket();
-                ticket.setPrice(costSeat);
-                ticket.setSeat(seat);
-                ticket.setShowtime(showtime);
-                saveTickets.add(ticket);
+                // Ticket ticket = new Ticket();
+                // ticket.setPrice(costSeat);
+                // ticket.setSeat(seat);
+                // ticket.setShowtime(showtime);
+                // saveTickets.add(ticket);
             }
         }
+
         if (!errorMessages.isEmpty()) {
             this.rollbackRedisSeats(showtimeKeyRedis, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
@@ -159,10 +179,11 @@ public class BookingService {
         booking.setPaymentMethod(request.getPaymentMethod());
         booking.setStatus(BookingStatus.PENDING);
         booking.setTotalAmount(totalAmount);
-        for (Ticket ticket : saveTickets) {
-            ticket.setBooking(booking);
-        }
-        booking.setTickets(saveTickets);
+        booking.setBookingDetails(bookingDetails);
+        // for (Ticket ticket : saveTickets) {
+        // ticket.setBooking(booking);
+        // }
+        // booking.setTickets(saveTickets);
         try {
             booking = bookingRepository.save(booking);
             // already config cascade below code unnessecsary

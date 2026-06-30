@@ -1,6 +1,5 @@
 package com.djnd.cinema_java_spring.domain.entity;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;

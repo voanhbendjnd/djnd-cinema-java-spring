@@ -61,4 +61,7 @@ public class Seat extends AbstractAuditingEntity<Integer> implements Serializabl
     @Builder.Default
     @OneToMany(mappedBy = "seat", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Ticket> tickets = new ArrayList<>();
+
+    @OneToMany(mappedBy = "seat", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<BookingDetail> bookingDetails;
 }

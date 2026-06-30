@@ -59,4 +59,7 @@ public class Showtime extends AbstractAuditingEntity<Long> implements Serializab
     @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Ticket> tickets = new ArrayList<>();
 
+    @OneToMany(mappedBy = "showtime", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<BookingDetail> bookingDetails;
+
 }
