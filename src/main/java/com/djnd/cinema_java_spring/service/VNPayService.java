@@ -15,33 +15,25 @@ import java.util.TimeZone;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import com.djnd.cinema_java_spring.config.VNPayConfiguration;
+
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class VNPayService {
-    @Value("${vnp.payUrl}")
-    private String payUrl;
-
-    @Value("${vnp.tmnCode}")
-    private String tmnCode;
-
-    @Value("${vnp.hashSecret}")
-    private String hashSecret;
-
-    @Value("${vnp.apiUrl}")
-    private String apiUrl;
-
-    @Value("${vnp.returnUrl}")
-    private String returnUrl;
+    final VNPayConfiguration vnPayConfiguration;
 
     public String createPaymentUrl(Long bookingId, BigDecimal totalAmount) {
+
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
         String vnp_OrderType = "other";
@@ -54,14 +46,14 @@ public class VNPayService {
         Map<String, String> vnp_Params = new HashMap<>();
         vnp_Params.put("vnp_Version", vnp_Version);
         vnp_Params.put("vnp_Command", vnp_Command);
-        vnp_Params.put("vnp_TmnCode", tmnCode);
+        vnp_Params.put("vnp_TmnCode", vnPayConfiguration.getTmnCode());
         vnp_Params.put("vnp_Amount", String.valueOf(amount));
         vnp_Params.put("vnp_CurrCode", "VND");
         vnp_Params.put("vnp_TxnRef", vnp_TxnReft);
         vnp_Params.put("vnp_OrderInfo", "Order ticket: " + vnp_TxnReft);
         vnp_Params.put("vnp_OrderType", vnp_OrderType);
         vnp_Params.put("vnp_Locale", "vn");
-        vnp_Params.put("vnp_ReturnUrl", returnUrl);
+        vnp_Params.put("vnp_ReturnUrl", vnPayConfiguration.getReturnUrl());
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
         vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
         List<String> fieldNames = new ArrayList<>(vnp_Params.keySet());
@@ -81,9 +73,9 @@ public class VNPayService {
             }
         }
         String queryUrl = query.toString();
-        String vnp_SecureHash = this.hmacSHA512(hashSecret, hashData.toString());
+        String vnp_SecureHash = this.hmacSHA512(vnPayConfiguration.getHashSecret(), hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
-        return payUrl + "?" + queryUrl;
+        return vnPayConfiguration.getPayUrl() + "?" + queryUrl;
     }
 
     private String getClientIp() {

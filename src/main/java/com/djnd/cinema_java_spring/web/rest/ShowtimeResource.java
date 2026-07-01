@@ -16,7 +16,6 @@ import com.djnd.cinema_java_spring.service.SeatService;
 import com.djnd.cinema_java_spring.service.ShowtimeService;
 import com.djnd.cinema_java_spring.service.dto.MovieRoomTimeDTORequest;
 import com.djnd.cinema_java_spring.service.dto.ResSeatAtRoomBookingDTO;
-import com.djnd.cinema_java_spring.service.projection.SeatLayoutDTO;
 import com.djnd.cinema_java_spring.service.projection.ShowtimeProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 import com.djnd.cinema_java_spring.web.rest.vm.ShowtimeVM;

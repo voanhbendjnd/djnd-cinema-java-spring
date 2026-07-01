@@ -59,7 +59,9 @@ public class SecurityConfiguration {
                 "/storage/**",
                 "/api/v1/search/**",
                 "/ws/**",
-                "/api/v1/files/**"
+                "/api/v1/files/**",
+                "/api/v1/payments/vnpay-ipn",
+                "/api/v1/payments/vnpay-return"
         };
         List<String> publishEndpoints = List.of(Constants.VERSION_API + "/home/movies",
                 Constants.VERSION_API + "/account/register",
