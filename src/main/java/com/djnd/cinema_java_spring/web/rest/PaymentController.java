@@ -1,15 +1,14 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.BookingService;
-import com.djnd.cinema_java_spring.service.dto.VNPayRequestDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,11 +29,11 @@ public class PaymentController {
     public ResponseEntity<Void> handleVNPayIPN(HttpServletRequest request, HttpServletResponse response) {
         return ResponseEntity.ok(null);
     }
-    
+
     @GetMapping("/vnpay-return")
     @ApiMessage("Vnpay return server")
-    public ResponseEntity<Void> handleVNPayReturn(@ModelAttribute VNPayRequestDTO requestDTO) {
-        bookingService.processVNPayCallback(requestDTO);
+    public ResponseEntity<Void> handleVNPayReturn(@RequestParam Map<String, String> params) {
+        bookingService.processVNPayCallback(params);
         return ResponseEntity.ok(null);
     }
 }

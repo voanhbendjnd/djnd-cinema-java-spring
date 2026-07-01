@@ -19,4 +19,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     @EntityGraph(attributePaths = { "seat" })
     @Query(value = "select t from Ticket t where t.showtime.id = :showtimeId")
     List<Ticket> findByShowtimeId(@Param("showtimeId") Long showtimeId);
+
+    boolean existsByShowtimeIdAndSeatIdIn(Long showtimeId, List<Integer> seatIds);
 }
