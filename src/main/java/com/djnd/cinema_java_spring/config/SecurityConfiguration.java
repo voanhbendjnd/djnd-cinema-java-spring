@@ -78,6 +78,7 @@ public class SecurityConfiguration {
                         auth -> auth
                                 // guest
                                 .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/home/movies").permitAll()
+                                .requestMatchers(HttpMethod.GET, Constants.VERSION_API + "/movies/**").permitAll()
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/account/register")
                                 .permitAll()
                                 .requestMatchers(HttpMethod.POST, Constants.VERSION_API + "/auth/login").permitAll()

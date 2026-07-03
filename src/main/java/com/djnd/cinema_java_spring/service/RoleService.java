@@ -1,6 +1,5 @@
 package com.djnd.cinema_java_spring.service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.cache.CacheManager;
@@ -37,7 +36,6 @@ public class RoleService {
     final CacheManager cacheManager;
     final UserRepository userRepository;
     final EntityManager entityManager;
-    final CacheManager chacManager;
 
     public RoleDTO createRole(RoleDTO roleDTO) {
         var role = new Role();
@@ -55,8 +53,6 @@ public class RoleService {
                     .toList();
             role.getPermissions().addAll(proxies);
             // role.setPermissions(proxies);
-        } else {
-            role.setPermissions(new ArrayList<>());
         }
         roleRepository.save(role);
         return toRoleDTO(role);
@@ -81,8 +77,6 @@ public class RoleService {
                     .map(per -> entityManager.getReference(Permission.class, per.getId())).toList();
             // role.setPermissions(proxies);
             role.getPermissions().addAll(proxies);
-        } else {
-            role.setPermissions(new ArrayList<>());
         }
         roleRepository.save(role);
         this.clearCachePermissionByRoleId(roleDTO.getId());

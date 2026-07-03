@@ -33,4 +33,13 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
             +
             " from Movie m where m.status = :status")
     List<PublishMovieProjection> getPublishMovie(@Param("status") MovieStatus status);
+
+    @Query("""
+                select distinct m
+                from Movie m
+                left join fetch m.showtimes s
+                left join fetch s.room
+                where m.id = :id
+            """)
+    Optional<Movie> findDetailById(@Param("id") Integer id);
 }

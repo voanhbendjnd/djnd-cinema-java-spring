@@ -4,6 +4,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -41,4 +42,6 @@ public class Ticket extends AbstractAuditingEntity<Long> implements Serializable
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     Booking booking;
+    @Column(name = "code", unique = true)
+    String code;
 }

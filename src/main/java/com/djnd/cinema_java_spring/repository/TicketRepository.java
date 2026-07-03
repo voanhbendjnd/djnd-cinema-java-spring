@@ -1,7 +1,10 @@
 package com.djnd.cinema_java_spring.repository;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,4 +24,16 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByShowtimeId(@Param("showtimeId") Long showtimeId);
 
     boolean existsByShowtimeIdAndSeatIdIn(Long showtimeId, List<Integer> seatIds);
+
+    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "booking" })
+    @Query(value = "select t from Ticket t join t.booking b where b.customer.id = :customerId", countQuery = "select count(t) from Ticket t join t.booking b where b.customer.id = :customerId")
+    Page<Ticket> getTicketsWithCustomerId(@Param("customerId") Long customerId, Pageable pageable);
+
+    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "booking" })
+    @Query(value = "select t from Ticket t join t.booking b where b.customer.id = :customerId and t.id = :ticketId")
+    Optional<Ticket> getTickeWithDetailByCustomerIdAndId(@Param("customerId") Long customerId,
+            @Param("ticketId") Long ticketId);
+
+    @Query(value = "select concat(s.seatRow, s.seatNo) from Ticket t join t.seat s where t.showtime.id = :showtimeId and t.seat.id in :seatIds")
+    List<String> getSeatsPositionSold(@Param("showtimeId") Long showtimeId, @Param("seatIds") List<Integer> seatIds);
 }

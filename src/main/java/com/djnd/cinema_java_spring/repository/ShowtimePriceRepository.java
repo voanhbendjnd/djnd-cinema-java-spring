@@ -16,13 +16,13 @@ import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
 public interface ShowtimePriceRepository extends JpaRepository<ShowtimePriceMatrix, Integer> {
 
         @Query(value = """
-                        select exists (select 1 from ShowtimePriceMatrix s where s.dayType = :dayType and s.seatType = :seatType and s.startTimeFrom < :startTimeTo and s.startTimeTo > :startTimeFrom)
+                        select exists (select 1 from ShowtimePriceMatrix s where s.dayType = :dayType and s.seatType = :seatType and s.startTimeFrom <= :startTimeTo and s.startTimeTo >= :startTimeFrom)
                         """)
         boolean existsByOverlapTime(@Param("dayType") String dayType, @Param("seatType") SeatType type,
                         @Param("startTimeFrom") LocalTime startTimeFrom, @Param("startTimeTo") LocalTime startTimeTo);
 
         @Query(value = """
-                        select exists (select 1 from ShowtimePriceMatrix s where s.dayType = :dayType and s.seatType = :seatType and s.startTimeFrom < :startTimeTo and s.startTimeTo > :startTimeFrom and s.id <> :id)
+                        select exists (select 1 from ShowtimePriceMatrix s where s.dayType = :dayType and s.seatType >= :seatType and s.startTimeFrom <= :startTimeTo and s.startTimeTo > :startTimeFrom and s.id <> :id)
                         """)
         boolean existsByOverlapTimeAndIdNot(@Param("id") Integer id, @Param("dayType") String dayType,
                         @Param("seatType") SeatType type,

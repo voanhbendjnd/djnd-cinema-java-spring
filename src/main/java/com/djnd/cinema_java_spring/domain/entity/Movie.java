@@ -45,7 +45,7 @@ public class Movie extends AbstractAuditingEntity<Integer> implements Serializab
     @NotNull
     @Column(name = "title", length = 200, nullable = false)
     String title;
-    @Column(columnDefinition = "MEDIUMTEXT")
+    @Column(columnDefinition = "LONGTEXT")
     String description;
     @NotNull
     @Column(name = "duration_minutes", nullable = false)

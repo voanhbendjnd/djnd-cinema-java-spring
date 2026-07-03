@@ -5,11 +5,12 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.apache.hc.core5.http.RequestNotExecutedException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -26,6 +27,7 @@ import com.djnd.cinema_java_spring.domain.entity.ShowtimePriceMatrix;
 import com.djnd.cinema_java_spring.domain.entity.Ticket;
 import com.djnd.cinema_java_spring.domain.enumeration.BookingStatus;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
+import com.djnd.cinema_java_spring.repository.BookingDetailRepository;
 import com.djnd.cinema_java_spring.repository.BookingRepository;
 import com.djnd.cinema_java_spring.repository.CustomerRepository;
 import com.djnd.cinema_java_spring.repository.PaymentHistoryRepository;
@@ -36,7 +38,6 @@ import com.djnd.cinema_java_spring.repository.TicketRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.ResBookingDTO;
-import com.djnd.cinema_java_spring.service.dto.VNPayRequestDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.SeatOccupiedException;
@@ -61,6 +62,7 @@ public class BookingService {
     final VNPayService vnPayService;
     final TicketRepository ticketRepository;
     final StringRedisTemplate redisTemplate;
+    final BookingDetailRepository bookingDetailRepository;
     final PaymentHistoryRepository paymentHistoryRepository;
     private static final String EXPIRE_TIME_HOLDING_SEATS = "600"; // 10 minutes
     static final String LUA_HOLD_SEATS_AT_SHOWTIME = "local showtimeKey = KEYS[1] " +
@@ -146,7 +148,17 @@ public class BookingService {
         BigDecimal totalAmount = BigDecimal.ZERO;
         // List<Ticket> saveTickets = new ArrayList<>();
         List<BookingDetail> bookingDetails = new ArrayList<>();
+        List<String> seatsPositionSold = ticketRepository.getSeatsPositionSold(showtime.getId(), seatIdAvaliables);
+        if (!seatsPositionSold.isEmpty()) {
+            seatsPositionSold.forEach(seatPosition -> {
+                errorMessages.add("Seat position [" + seatPosition + "] already sold out!");
+            });
+        }
+        if (!errorMessages.isEmpty()) {
+            this.removeSeatsWithShowtimeOnRedis(showtimeKeyRedis, request.getSeatIds());
 
+            throw new RequestInvalidException(String.join("\n", errorMessages));
+        }
         Booking booking = new Booking();
         for (Seat seat : seats) {
             BigDecimal costSeat = priceSeatMap.get(seat.getType());
@@ -178,7 +190,6 @@ public class BookingService {
         booking.setCustomer(customer);
         booking.setPaymentMethod(request.getPaymentMethod());
         booking.setStatus(pending);
-        //
 
         booking.setTotalAmount(totalAmount);
         booking.setBookingDetails(bookingDetails);
@@ -212,40 +223,60 @@ public class BookingService {
     }
 
     @Transactional
-    public void processVNPayCallback(Map<String, String> params) {
-
+    public Map<String, String> processVNPayCallback(Map<String, String> params) {
+        Map<String, String> response = new HashMap<>();
         Long bookingId = Long.parseLong(params.get("vnp_TxnRef"));
         String responseCode = params.get("vnp_ResponseCode");
-        Booking booking = bookingRepository.findWithDetailById(bookingId)
+        Booking booking = bookingRepository.findForUpdateDetailByIdWithVersion(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
         Long showtimeId = booking.getBookingDetails().get(0).getShowtime().getId();
         String showtimeRedisKey = "showtime:" + showtimeId + ":seats";
         List<Integer> seatIds = booking.getBookingDetails().stream().map(detail -> detail.getSeat().getId())
                 .toList();
-        this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIds);
 
-        if (booking.getStatus() == BookingStatus.SUCCESS || booking.getStatus() == BookingStatus.FAILED) {
-            log.info("Booking {} already processed with status: {}", bookingId, booking.getStatus());
-            return;
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            response.put("RspCode", "02");
+            response.put("Message", "Order already confirmed");
+            return response;
+        }
+        BigDecimal vnpTotalAmount = new BigDecimal(params.get("vnp_Amount")).divide(new BigDecimal(100));
+        if (booking.getTotalAmount().compareTo(vnpTotalAmount) != 0) {
+            response.put("RspCode", "04");
+            response.put("Message", "Invalid Amount");
+            return response;
         }
         if ("00".equals(responseCode)) {
             BookingStatus success = BookingStatus.SUCCESS;
             booking.setStatus(success);
+            booking.setVersion(booking.getVersion() + 1);
             PaymentHistory history = new PaymentHistory();
             history.setBooking(booking);
             history.setStatus(success);
             paymentHistoryRepository.save(history);
             // init & save tickets
             this.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIds, showtimeId);
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIds);
 
+            response.put("RspCode", "00");
+            response.put("Message", "Confirm Success");
+            return response;
         } else {
             BookingStatus failed = BookingStatus.FAILED;
             PaymentHistory history = new PaymentHistory();
             history.setBooking(booking);
+            booking.setVersion(booking.getVersion() + 1);
             history.setStatus(failed);
+            bookingDetailRepository.deleteAll(booking.getBookingDetails());
+            booking.getBookingDetails().clear();
             paymentHistoryRepository.save(history);
             booking.setStatus(failed);
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIds);
+
+            response.put("RspCode", "00");
+            response.put("Message", "Confirm Success");
+            return response;
         }
+
     }
 
     @Transactional
@@ -262,6 +293,7 @@ public class BookingService {
                 newTicket.setSeat(detail.getSeat());
                 newTicket.setShowtime(detail.getShowtime());
                 newTicket.setPrice(detail.getPrice());
+                newTicket.setCode(UUID.randomUUID() + "");
                 saveTickets.add(newTicket);
             }
             try {

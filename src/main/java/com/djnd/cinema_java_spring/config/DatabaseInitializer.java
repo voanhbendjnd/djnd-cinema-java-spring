@@ -109,6 +109,82 @@ public class DatabaseInitializer implements CommandLineRunner {
                                                         PermissionMethod.DELETE,
                                                         "USERS"));
 
+                        ///
+                        permissionList.add(
+                                        new Permission("CREATE_MOVIES", Constants.VERSION_API + "/admin/movies",
+                                                        PermissionMethod.POST,
+                                                        "MOVIES"));
+                        permissionList.add(
+                                        new Permission("UPDATE_MOVIES", Constants.VERSION_API + "/admin/movies",
+                                                        PermissionMethod.PUT,
+                                                        "ROOMS"));
+                        permissionList.add(
+                                        new Permission("DELETE_MOVIES", Constants.VERSION_API + "/admin/movies{id}",
+                                                        PermissionMethod.DELETE, "ROOMS"));
+                        permissionList.add(
+                                        new Permission("GET_MOVIES", Constants.VERSION_API + "/admin/movies{id}",
+                                                        PermissionMethod.GET,
+                                                        "ROOMS"));
+                        permissionList.add(
+                                        new Permission("GET_ALL_MOVIES", Constants.VERSION_API + "/admin/movies",
+                                                        PermissionMethod.GET,
+                                                        "MOVIES"));
+                        ///
+                        permissionList.add(
+                                        new Permission("CREATE_ROOM", Constants.VERSION_API + "/admin/rooms",
+                                                        PermissionMethod.POST,
+                                                        "ROOMS"));
+                        permissionList.add(
+                                        new Permission("UPDATE_ROOM", Constants.VERSION_API + "/admin/rooms",
+                                                        PermissionMethod.PUT,
+                                                        "ROOMS"));
+                        permissionList.add(
+                                        new Permission("DELETE_ROOM", Constants.VERSION_API + "/admin/rooms{id}",
+                                                        PermissionMethod.DELETE, "ROOMS"));
+                        permissionList.add(
+                                        new Permission("GET_ROOM", Constants.VERSION_API + "/admin/rooms{id}",
+                                                        PermissionMethod.GET,
+                                                        "ROOMS"));
+                        permissionList.add(
+                                        new Permission("GET_ALL_ROOMS", Constants.VERSION_API + "/admin/rooms",
+                                                        PermissionMethod.GET,
+                                                        "ROOMS"));
+                        permissionList.add(
+                                        new Permission("UPLOAD_POSTER",
+                                                        Constants.VERSION_API + "/admin/movies/upload-temp",
+                                                        PermissionMethod.POST,
+                                                        "MOVIES"));
+                        permissionList.add(
+                                        new Permission("CHECK_OCCUPIED",
+                                                        Constants.VERSION_API + "/admin/showtimes/check",
+                                                        PermissionMethod.POST,
+                                                        "SHOWTIMES"));
+                        permissionList.add(
+                                        new Permission("GET_DATE",
+                                                        Constants.VERSION_API
+                                                                        + "/admin/showtimes",
+                                                        PermissionMethod.POST,
+                                                        "MOVIES"));
+                        //
+                        permissionList.add(
+                                        new Permission("CREATE_ROLE", Constants.VERSION_API + "/admin/roles",
+                                                        PermissionMethod.POST,
+                                                        "ROLES"));
+                        permissionList.add(
+                                        new Permission("UPDATE_ROLE", Constants.VERSION_API + "/admin/roles",
+                                                        PermissionMethod.PUT,
+                                                        "ROLES"));
+                        permissionList.add(
+                                        new Permission("DELETE_ROLE", Constants.VERSION_API + "/admin/roles/{id}",
+                                                        PermissionMethod.DELETE, "ROLES"));
+                        permissionList.add(
+                                        new Permission("GET_ROLE", Constants.VERSION_API + "/admin/roles/{id}",
+                                                        PermissionMethod.GET,
+                                                        "ROLES"));
+                        permissionList.add(
+                                        new Permission("GET_ALL_ROLE", Constants.VERSION_API + "/admin/roles",
+                                                        PermissionMethod.GET,
+                                                        "ROLES"));
                         // customer list
                         permissionList.add(new Permission("GET_ALL_CUSTOMER",
                                         Constants.VERSION_API + "/api/admin/users/customer", PermissionMethod.GET,

@@ -3,8 +3,6 @@ package com.djnd.cinema_java_spring.web.rest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,8 +12,6 @@ import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.BookingService;
 import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.ResBookingDTO;
-import com.djnd.cinema_java_spring.service.dto.VNPayRequestDTO;
-import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
 
 import jakarta.validation.Valid;
 import lombok.AccessLevel;

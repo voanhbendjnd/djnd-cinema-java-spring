@@ -94,7 +94,7 @@ public class MovieResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(movieFacadeService.saveTempFile(file));
     }
 
-    @PostMapping("/admin/movies/")
+    @PostMapping("/admin/movies")
     @ApiMessage("Create new movie")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<AdminMovieDTO> createMovie(@Valid @RequestBody ComplexShowtimeRequestDTO movieDTO)

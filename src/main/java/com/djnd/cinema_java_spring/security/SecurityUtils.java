@@ -36,7 +36,7 @@ public class SecurityUtils {
     private Long refreshTokenExpiration;
     private final SecretKey jwtSecretKey;
     static {
-        JWT_ALGORITHM = MacAlgorithm.HS512;
+        JWT_ALGORITHM = MacAlgorithm.HS256;
     }
 
     public SecurityUtils(JwtEncoder jwtEncoder, SecretKey jwtSecretKey) {

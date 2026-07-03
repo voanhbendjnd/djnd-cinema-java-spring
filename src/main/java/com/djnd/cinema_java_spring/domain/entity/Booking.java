@@ -21,6 +21,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -51,6 +52,8 @@ public class Booking extends AbstractAuditingEntity<Long> implements Serializabl
     @NotNull
     @Column(name = "payment_method", nullable = false)
     String paymentMethod;
+    @Version
+    Long version = 0L;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id")
     Customer customer;

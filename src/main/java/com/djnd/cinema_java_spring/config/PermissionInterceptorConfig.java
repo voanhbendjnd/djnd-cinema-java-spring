@@ -30,7 +30,7 @@ public class PermissionInterceptorConfig implements WebMvcConfigurer {
                 // "/api/v1/admin/users/**"
         };
         String[] securePatterns = {
-                "/api/v1/admin/**",
+                "/api/v2/admin/**",
                 // "/api/admin/v1/roles/**",
                 // "/api/admin/v1/permissions/**",
         };

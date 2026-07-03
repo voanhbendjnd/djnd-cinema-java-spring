@@ -16,16 +16,28 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     public static final String CACHE_INFORMATION_ACCOUNT_BY_USER_ID = "inforByUserId";
 
     @Cacheable(cacheNames = CACHE_INFORMATION_ACCOUNT_BY_USER_ID, unless = "#result == null")
-    @Query(value = """
-                         select u.id as id, u.name as name, u.login as login, u.email as email,
-                                         u.gender as gender, u.phone as phone, u.avatarUrl as avatarUrl, u.activated as activated,
-                                                         u.createdDate as createdDate, u.createdBy as createdBy,
-                                                                         u.lastModifiedDate as lastModifiedDate, u.lastModifiedBy as lastModifiedBy,
-                                                                                         c.identityCard as identityCard, c.address as address,
-                                                                                                         c.loyaltyPoints as loyaltyPoints, c.dateOfBirth as dateOfBirth
+    @Query("""
+            select new com.djnd.cinema_java_spring.service.projection.AccountCustomerProjection(
+                u.id,
+                u.name,
+                u.login,
+                u.email,
+                u.gender,
+                u.phone,
+                u.avatarUrl,
+                u.activated,
+                u.createdDate,
+                u.createdBy,
+                u.lastModifiedDate,
+                u.lastModifiedBy,
+                c.identityCard,
+                c.address,
+                c.loyaltyPoints
+
+            )
             from User u
-                         join u.customer c
-                         where u.id = :userId
-                         """)
+            join u.customer c
+            where u.id = :userId
+            """)
     Optional<AccountCustomerProjection> getInformationProfileUserById(@Param("userId") Long userId);
 }

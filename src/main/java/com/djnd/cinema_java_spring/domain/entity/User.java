@@ -100,7 +100,7 @@ public class User extends AbstractAuditingEntity<Long> implements Serializable {
     @JoinColumn(name = "role_id")
     Role role;
     String sessionId;
-    @Column(columnDefinition = "MEDIUMTEXT")
+    @Column(columnDefinition = "LONGTEXT")
     @JsonIgnore
     String refreshToken;
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
