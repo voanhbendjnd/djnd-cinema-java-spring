@@ -35,6 +35,7 @@ import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.ResBookingDTO;
+import com.djnd.cinema_java_spring.service.dto.UserDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.SeatOccupiedException;
@@ -92,9 +93,9 @@ public class BookingService {
         User staff = userRepository.findWithDetailRoleById(staffId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
         String roleName = staff.getRole().getName();
-        if (!roleName.equalsIgnoreCase(AuthoritiesConstants.ADMIN)
-                || !roleName.equalsIgnoreCase(AuthoritiesConstants.MANAGER)
-                || !roleName.equalsIgnoreCase(AuthoritiesConstants.STAFF)) {
+        List<String> allowedRoles = List.of(AuthoritiesConstants.ADMIN, AuthoritiesConstants.MANAGER,
+                AuthoritiesConstants.STAFF);
+        if (allowedRoles.stream().noneMatch(role -> role.equalsIgnoreCase(roleName))) {
             throw new UserAccessDeniedException("You do not have permission!");
         }
 
@@ -171,11 +172,11 @@ public class BookingService {
         booking.setBookingDetails(bookingDetails);
         try {
             ResBookingDTO res = new ResBookingDTO();
-            bookingRepository.flush();
             if (paymentMethod.equals(PaymentMethod.VNPAY.toString())) {
                 BookingStatus pending = BookingStatus.PENDING;
                 booking.setStatus(pending);
                 booking = bookingRepository.save(booking);
+                bookingRepository.flush(); // check unique
                 paymentHistoryService.createHistoryWithStatus(booking, pending);
                 String paymentUrl = vnPayService.createPaymentUrl(booking.getId(), totalAmount);
 
@@ -189,6 +190,9 @@ public class BookingService {
                 paymentHistoryService.createHistoryWithStatus(booking, success);
                 ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIdsAvaliables,
                         showtime.getId());
+                bookingRepository.flush();
+
+                this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIdsAvaliables);
                 res.setBookingId(booking.getId());
                 res.setStatus(success.toString());
             }
@@ -413,6 +417,21 @@ public class BookingService {
         } catch (Exception ex) {
             log.error("Failed to rollback locked seats in Redis for key: {}", redisKey);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public UserDTO getCustomerByEmail(String email) {
+        User user = userRepository.findOneByEmailAndActivatedIsTrue(email.toLowerCase())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found with email: " + email));
+        if (user.getCustomer() == null) {
+            throw new ResourceNotFoundException("User is not a customer: " + email);
+        }
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setEmail(user.getEmail());
+        dto.setName(user.getName());
+        dto.setPhone(user.getPhone());
+        return dto;
     }
 
 }
