@@ -11,5 +11,6 @@ import lombok.experimental.FieldDefaults;
 public class ResBookingDTO {
     Long bookingId;
     String paymentUrl;
+    String status;
 
 }

@@ -19,5 +19,7 @@ public class BookingRequestDTO {
     List<Integer> seatIds;
     @NotNull
     String paymentMethod;
+    Long customerId;
+    Boolean isNotMember;
 
 }

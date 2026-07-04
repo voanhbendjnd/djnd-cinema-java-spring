@@ -2,12 +2,14 @@ package com.djnd.cinema_java_spring.service;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.djnd.cinema_java_spring.domain.entity.Seat;
 import com.djnd.cinema_java_spring.domain.entity.Showtime;
 import com.djnd.cinema_java_spring.domain.entity.ShowtimePriceMatrix;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
@@ -66,5 +68,16 @@ public class SeatService {
         res.setTotalSeats(resSeats.size());
         res.setTotalSoldSeats(Math.toIntExact(totalSoldSeats));
         return res;
+    }
+
+    public List<Seat> getSeatAvailable(List<Integer> seatIds, List<String> errorMessages) {
+        List<Seat> seats = seatRepository.findByIdIn(seatIds);
+        List<Integer> seatIdsAvaliables = seats.stream().map(Seat::getId).toList();
+        for (Integer seatId : seatIds) {
+            if (!seatIdsAvaliables.contains(seatId)) {
+                errorMessages.add("Seat with ID " + seatId + " not found!");
+            }
+        }
+        return seats;
     }
 }

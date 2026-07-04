@@ -287,4 +287,5 @@ public class ShowtimeService {
         res.setRooms(roomSchedules);
         return res;
     }
+
 }

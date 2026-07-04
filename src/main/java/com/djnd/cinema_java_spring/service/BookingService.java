@@ -2,14 +2,12 @@ package com.djnd.cinema_java_spring.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -23,18 +21,17 @@ import com.djnd.cinema_java_spring.domain.entity.Customer;
 import com.djnd.cinema_java_spring.domain.entity.PaymentHistory;
 import com.djnd.cinema_java_spring.domain.entity.Seat;
 import com.djnd.cinema_java_spring.domain.entity.Showtime;
-import com.djnd.cinema_java_spring.domain.entity.ShowtimePriceMatrix;
-import com.djnd.cinema_java_spring.domain.entity.Ticket;
+import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.domain.enumeration.BookingStatus;
+import com.djnd.cinema_java_spring.domain.enumeration.PaymentMethod;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
 import com.djnd.cinema_java_spring.repository.BookingDetailRepository;
 import com.djnd.cinema_java_spring.repository.BookingRepository;
 import com.djnd.cinema_java_spring.repository.CustomerRepository;
 import com.djnd.cinema_java_spring.repository.PaymentHistoryRepository;
-import com.djnd.cinema_java_spring.repository.SeatRepository;
-import com.djnd.cinema_java_spring.repository.ShowtimePriceRepository;
 import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
-import com.djnd.cinema_java_spring.repository.TicketRepository;
+import com.djnd.cinema_java_spring.repository.UserRepository;
+import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.ResBookingDTO;
@@ -42,6 +39,7 @@ import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.SeatOccupiedException;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
+import com.djnd.cinema_java_spring.web.rest.errors.UserAccessDeniedException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -56,13 +54,16 @@ import lombok.extern.slf4j.Slf4j;
 public class BookingService {
     final BookingRepository bookingRepository;
     final ShowtimeRepository showtimeRepository;
-    final ShowtimePriceRepository showtimePriceRepository;
-    final SeatRepository seatRepository;
+    final PaymentHistoryService paymentHistoryService;
     final CustomerRepository customerRepository;
+    final SeatService seatService;
+    final ShowtimePriceService showtimePriceService;
+    final TicketService ticketService;
     final VNPayService vnPayService;
-    final TicketRepository ticketRepository;
     final StringRedisTemplate redisTemplate;
     final BookingDetailRepository bookingDetailRepository;
+    final UserRepository userRepository;
+    final BookingDetailService bookingDetailService;
     final PaymentHistoryRepository paymentHistoryRepository;
     private static final String EXPIRE_TIME_HOLDING_SEATS = "600"; // 10 minutes
     static final String LUA_HOLD_SEATS_AT_SHOWTIME = "local showtimeKey = KEYS[1] " +
@@ -83,94 +84,79 @@ public class BookingService {
             "   return occupiedSeats " +
             "end";
 
-    public ResBookingDTO createBooking(BookingRequestDTO request) {
-        Long userId = SecurityUtils.getCurrentUserIdOrNull();
-        if (userId == null) {
+    public ResBookingDTO createBookingByStaff(BookingRequestDTO request) {
+        Long staffId = SecurityUtils.getCurrentUserIdOrNull();
+        if (staffId == null) {
             throw new UnauthorizedException("You are not logged in!");
         }
-        Customer customer = customerRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Not found customer!"));
-        // start check seats available turn 1
-        String showtimeKeyRedis = "showtime:" + request.getShowtimeId() + ":seats";
-        List<String> argsRedis = new ArrayList<>();
-        argsRedis.add(EXPIRE_TIME_HOLDING_SEATS);
-        request.getSeatIds().forEach(seatId -> argsRedis.add(String.valueOf(seatId)));
-        DefaultRedisScript<List<String>> redisScript = new DefaultRedisScript<>(LUA_HOLD_SEATS_AT_SHOWTIME);
-        List<String> occupiedSeatIds = redisTemplate.execute(redisScript,
-                Collections.singletonList(showtimeKeyRedis),
-                argsRedis.toArray());
-        if (occupiedSeatIds != null && !occupiedSeatIds.isEmpty()) {
-            List<Integer> errorOccupiedSeatIds = occupiedSeatIds.stream().map(Integer::parseInt).toList();
-            throw new SeatOccupiedException("Some seat are already holding or sold!", errorOccupiedSeatIds);
+        User staff = userRepository.findWithDetailRoleById(staffId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        String roleName = staff.getRole().getName();
+        if (!roleName.equalsIgnoreCase(AuthoritiesConstants.ADMIN)
+                || !roleName.equalsIgnoreCase(AuthoritiesConstants.MANAGER)
+                || !roleName.equalsIgnoreCase(AuthoritiesConstants.STAFF)) {
+            throw new UserAccessDeniedException("You do not have permission!");
         }
-        // end check
-        List<Seat> seats = seatRepository.findByIdIn(request.getSeatIds());
-        List<Integer> seatIdAvaliables = seats.stream().map(Seat::getId).toList();
+
+        // start holding seat and check exist seat at redis
+        String showtimeRedisKey = this.getShowtimeKeyOrholdingSeatAndCheckAtRedis(request.getShowtimeId(),
+                request.getSeatIds());
+        // end holding seat and check exist seat at redis
+
+        // start check seat exist db, if exist remove seat in redis
         List<String> errorMessages = new ArrayList<>();
-        for (Integer seatId : request.getSeatIds()) {
-            if (!seatIdAvaliables.contains(seatId)) {
-                errorMessages.add("Seat with ID " + seatId + " not found!");
-            }
-        }
+        List<Seat> seats = seatService.getSeatAvailable(request.getSeatIds(), errorMessages);
+
         if (!errorMessages.isEmpty()) {
-            this.removeSeatsWithShowtimeOnRedis(showtimeKeyRedis, request.getSeatIds());
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
+        // end check seat exist db, if exist remove seat in redis
+
+        List<Integer> seatIdsAvaliables = seats.stream().map(Seat::getId).toList();
+        // start check showtime booking must be before current
         Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
         LocalDateTime now = LocalDateTime.now();
         if (showtime.getStartDateTime().isBefore(now)) {
-            this.removeSeatsWithShowtimeOnRedis(showtimeKeyRedis, request.getSeatIds());
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new RequestInvalidException("The movie had been shown!");
 
         }
-
-        List<Ticket> availableTickets = ticketRepository.findByShowtimeId(showtime.getId());
-        List<Integer> availableSeatTickets = availableTickets.stream().map(x -> x.getSeat().getId()).toList();
-        for (Integer seatId : seatIdAvaliables) {
-            if (availableSeatTickets.contains(seatId)) {
-
-                errorMessages.add(String.format("Seat with ID %d already exist!", seatId));
-            }
-        }
+        // end check showtime booking must be before current
+        // start check seat with ticket sold
+        ticketService.checkTicketWithSeatSold(request.getShowtimeId(), seatIdsAvaliables, errorMessages);
         if (!errorMessages.isEmpty()) {
-            this.removeSeatsWithShowtimeOnRedis(showtimeKeyRedis, request.getSeatIds());
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
 
             throw new RequestInvalidException(String.join("\n", errorMessages));
         }
-        String dayType = (showtime.getStartDateTime().getDayOfWeek().getValue() >= 5) ? "WEEKEND" : "WEEKDAY";
+        // end check seat with ticket sold
 
-        LocalTime showtimeAt = showtime.getStartDateTime().toLocalTime();
-        List<ShowtimePriceMatrix> priceMatrixList = showtimePriceRepository.findByDayAndStartTime(dayType,
-                showtimeAt);
-        Map<SeatType, BigDecimal> priceSeatMap = priceMatrixList.stream()
-                .collect(Collectors.toMap(ShowtimePriceMatrix::getSeatType, ShowtimePriceMatrix::getFinalPrice));
+        // start get price seat by start date time movie
+        Map<SeatType, BigDecimal> priceSeatMap = showtimePriceService
+                .getPriceSeatsByStartDateTime(showtime.getStartDateTime());
+        // end get price seat by start date time movie
+
         BigDecimal totalAmount = BigDecimal.ZERO;
-        // List<Ticket> saveTickets = new ArrayList<>();
-        List<BookingDetail> bookingDetails = new ArrayList<>();
-        List<String> seatsPositionSold = ticketRepository.getSeatsPositionSold(showtime.getId(), seatIdAvaliables);
-        if (!seatsPositionSold.isEmpty()) {
-            seatsPositionSold.forEach(seatPosition -> {
-                errorMessages.add("Seat position [" + seatPosition + "] already sold out!");
-            });
-        }
-        if (!errorMessages.isEmpty()) {
-            this.removeSeatsWithShowtimeOnRedis(showtimeKeyRedis, request.getSeatIds());
 
-            throw new RequestInvalidException(String.join("\n", errorMessages));
-        }
-        Booking booking = new Booking();
+        List<BookingDetail> bookingDetails = new ArrayList<>();
+        String paymentMethod = request.getPaymentMethod();
+        Booking booking = request.getIsNotMember()
+                ? this.generateBookingForNotMember(paymentMethod)
+                : this.generateBookingForMember(paymentMethod,
+                        customerRepository.findById(request.getCustomerId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Customer not found!")));
         for (Seat seat : seats) {
             BigDecimal costSeat = priceSeatMap.get(seat.getType());
             if (costSeat == null) {
                 errorMessages.add("Cannot get price config for seat: " + seat.getSeatRow() + seat.getSeatNo()
                         + " [Type: " + seat.getType() + "]");
             } else {
-                BookingDetail detail = new BookingDetail();
-                detail.setBooking(booking);
-                detail.setPrice(costSeat);
-                detail.setShowtime(showtime);
-                detail.setSeat(seat);
+                // start generate booking detail
+                BookingDetail detail = bookingDetailService.generateBookingDetail(booking, showtime, seat, costSeat);
+                // end generate booking detail
+
                 bookingDetails.add(detail);
                 totalAmount = totalAmount.add(costSeat);
 
@@ -178,29 +164,150 @@ public class BookingService {
         }
 
         if (!errorMessages.isEmpty()) {
-            this.removeSeatsWithShowtimeOnRedis(showtimeKeyRedis, request.getSeatIds());
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
-        // String dateStr = LocalDate.now().toString().replace("-", "");
-        // booking.setBookingCode(
-        // "BK-" + dateStr + "-" + RandomUtil.generateRandomAlphanumericString() +
-        // UUID.randomUUID());
-        BookingStatus pending = BookingStatus.PENDING;
-        booking.setBookingCode("BK-" + System.currentTimeMillis());
-        booking.setCustomer(customer);
-        booking.setPaymentMethod(request.getPaymentMethod());
-        booking.setStatus(pending);
-
         booking.setTotalAmount(totalAmount);
         booking.setBookingDetails(bookingDetails);
         try {
+            ResBookingDTO res = new ResBookingDTO();
+            bookingRepository.flush();
+            if (paymentMethod.equals(PaymentMethod.VNPAY.toString())) {
+                BookingStatus pending = BookingStatus.PENDING;
+                booking.setStatus(pending);
+                booking = bookingRepository.save(booking);
+                paymentHistoryService.createHistoryWithStatus(booking, pending);
+                String paymentUrl = vnPayService.createPaymentUrl(booking.getId(), totalAmount);
+
+                res.setBookingId(booking.getId());
+                res.setStatus(pending.toString());
+                res.setPaymentUrl(paymentUrl);
+            } else {
+                BookingStatus success = BookingStatus.SUCCESS;
+                booking.setStatus(success);
+                booking = bookingRepository.save(booking);
+                paymentHistoryService.createHistoryWithStatus(booking, success);
+                ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIdsAvaliables,
+                        showtime.getId());
+                res.setBookingId(booking.getId());
+                res.setStatus(success.toString());
+            }
+            return res;
+
+        } catch (Exception ex) {
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
+
+            if (ex instanceof DataIntegrityViolationException) {
+                throw new RequestInvalidException(
+                        "The system is busy because someone else has booked the same seat as you. Please try again!");
+            }
+            throw ex;
+
+        }
+    }
+
+    public String getShowtimeKeyOrholdingSeatAndCheckAtRedis(Long showtimeId, List<Integer> seatIds) {
+        String showtimeRedisKey = "showtime:" + showtimeId + ":seats";
+        List<String> argsRedis = new ArrayList<>();
+        argsRedis.add(EXPIRE_TIME_HOLDING_SEATS);
+        seatIds.forEach(seatId -> argsRedis.add(String.valueOf(seatId)));
+        DefaultRedisScript<List<String>> redisScript = new DefaultRedisScript<>(LUA_HOLD_SEATS_AT_SHOWTIME);
+        List<String> occupiedSeatIds = redisTemplate.execute(redisScript,
+                Collections.singletonList(showtimeRedisKey),
+                argsRedis.toArray());
+        if (occupiedSeatIds != null && !occupiedSeatIds.isEmpty()) {
+            List<Integer> errorOccupiedSeatIds = occupiedSeatIds.stream().map(Integer::parseInt).toList();
+            throw new SeatOccupiedException("Some seat are already holding or sold!", errorOccupiedSeatIds);
+        }
+        return showtimeRedisKey;
+    }
+
+    // customer vnpay booking default
+    public ResBookingDTO createBooking(BookingRequestDTO request) {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new UnauthorizedException("You are not logged in!");
+        }
+        Customer customer = customerRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Not found customer!"));
+        // start holding seat and check exist seat at redis
+        String showtimeRedisKey = this.getShowtimeKeyOrholdingSeatAndCheckAtRedis(request.getShowtimeId(),
+                request.getSeatIds());
+        // end holding seat and check exist seat at redis
+
+        // start check seat exist db, if exist remove seat in redis
+        List<String> errorMessages = new ArrayList<>();
+        List<Seat> seats = seatService.getSeatAvailable(request.getSeatIds(), errorMessages);
+
+        if (!errorMessages.isEmpty()) {
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
+            throw new ResourceNotFoundException(String.join("\n", errorMessages));
+        }
+        // end check seat exist db, if exist remove seat in redis
+
+        List<Integer> seatIdsAvaliables = seats.stream().map(Seat::getId).toList();
+        // start check showtime booking must be before current
+        Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+        LocalDateTime now = LocalDateTime.now();
+        if (showtime.getStartDateTime().isBefore(now)) {
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
+            throw new RequestInvalidException("The movie had been shown!");
+
+        }
+        // end check showtime booking must be before current
+        // start check seat with ticket sold
+        ticketService.checkTicketWithSeatSold(request.getShowtimeId(), seatIdsAvaliables, errorMessages);
+        if (!errorMessages.isEmpty()) {
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
+
+            throw new RequestInvalidException(String.join("\n", errorMessages));
+        }
+        // end check seat with ticket sold
+
+        // start get price seat by start date time movie
+        Map<SeatType, BigDecimal> priceSeatMap = showtimePriceService
+                .getPriceSeatsByStartDateTime(showtime.getStartDateTime());
+        // end get price seat by start date time movie
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
+        List<BookingDetail> bookingDetails = new ArrayList<>();
+
+        Booking booking = this.generateBookingForMember(PaymentMethod.VNPAY.toString(),
+                customer);
+        for (Seat seat : seats) {
+            BigDecimal costSeat = priceSeatMap.get(seat.getType());
+            if (costSeat == null) {
+                errorMessages.add("Cannot get price config for seat: " + seat.getSeatRow() + seat.getSeatNo()
+                        + " [Type: " + seat.getType() + "]");
+            } else {
+                // start generate booking detail
+                BookingDetail detail = bookingDetailService.generateBookingDetail(booking, showtime, seat, costSeat);
+                // end generate booking detail
+
+                bookingDetails.add(detail);
+                totalAmount = totalAmount.add(costSeat);
+
+            }
+        }
+
+        if (!errorMessages.isEmpty()) {
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
+            throw new ResourceNotFoundException(String.join("\n", errorMessages));
+        }
+        booking.setTotalAmount(totalAmount);
+        booking.setBookingDetails(bookingDetails);
+
+        try {
+            BookingStatus pending = BookingStatus.PENDING;
+            booking.setStatus(pending);
             booking = bookingRepository.save(booking);
             // already config cascade below code unnessecsary
             // ticketRepository.saveAll(saveTickets);
-            PaymentHistory history = new PaymentHistory();
-            history.setBooking(booking);
-            history.setStatus(pending);
-            paymentHistoryRepository.save(history);
+            // start save payment history with status pending
+            paymentHistoryService.createHistoryWithStatus(booking, pending);
+            // end save payment history
             bookingRepository.flush();
             String paymentUrl = vnPayService.createPaymentUrl(booking.getId(), totalAmount);
 
@@ -210,7 +317,7 @@ public class BookingService {
             return res;
 
         } catch (Exception ex) {
-            this.removeSeatsWithShowtimeOnRedis(showtimeKeyRedis, request.getSeatIds());
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
 
             if (ex instanceof DataIntegrityViolationException) {
                 throw new RequestInvalidException(
@@ -220,6 +327,26 @@ public class BookingService {
 
         }
 
+    }
+
+    public Booking generateBookingForMember(String paymentMethod,
+            Customer customer) {
+        Booking newBooking = this.generateBooking(paymentMethod);
+        newBooking.setCustomer(customer);
+        return newBooking;
+    }
+
+    public Booking generateBookingForNotMember(String paymentMethod) {
+        Booking newBooking = this.generateBooking(paymentMethod);
+        return newBooking;
+    }
+
+    public Booking generateBooking(String paymentMethod) {
+        Booking newBooking = new Booking();
+        newBooking.setBookingCode("BK-" + System.currentTimeMillis());
+        newBooking.setPaymentMethod(paymentMethod);
+
+        return newBooking;
     }
 
     @Transactional
@@ -254,7 +381,7 @@ public class BookingService {
             history.setStatus(success);
             paymentHistoryRepository.save(history);
             // init & save tickets
-            this.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIds, showtimeId);
+            ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIds, showtimeId);
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIds);
 
             response.put("RspCode", "00");
@@ -277,34 +404,6 @@ public class BookingService {
             return response;
         }
 
-    }
-
-    @Transactional
-    public List<Ticket> createTicketsWithBookingDetailsWhenPaymentBookingSuccess(Booking bookingExisting,
-            List<Integer> seatIds, Long showtimeId) {
-        if (bookingExisting != null && bookingExisting.getBookingDetails() != null) {
-            if (ticketRepository.existByShowtimeIdAndSeatIdIn(showtimeId, seatIds)) {
-                throw new RequestInvalidException("Duplicated ticket!");
-            }
-            List<Ticket> saveTickets = new ArrayList<>();
-            for (BookingDetail detail : bookingExisting.getBookingDetails()) {
-                Ticket newTicket = new Ticket();
-                newTicket.setBooking(bookingExisting);
-                newTicket.setSeat(detail.getSeat());
-                newTicket.setShowtime(detail.getShowtime());
-                newTicket.setPrice(detail.getPrice());
-                newTicket.setCode(UUID.randomUUID() + "");
-                saveTickets.add(newTicket);
-            }
-            try {
-                return ticketRepository.saveAll(saveTickets);
-
-            } catch (DataIntegrityViolationException ex) {
-                throw new RequestInvalidException("Seat had already exist ticket!");
-            }
-        }
-
-        throw new RequestInvalidException("Booking not found!");
     }
 
     public void removeSeatsWithShowtimeOnRedis(String redisKey, List<Integer> seatIds) {

@@ -32,8 +32,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query(value = "select b from Booking b where b.id = :bookingId")
     Optional<Booking> findForUpdateDetailByIdWithVersion(@Param("bookingId") Long bookingId);
 
-    @Query(value = "select b from Booking b where b.status = :status and b.createdDate >= :threshold")
-    List<Booking> findAllByStatusAndCreatedAtBefore(@Param("status") BookingStatus status,
-            @Param("threshold") Instant threhold);
+    @Modifying
+    @Query(value = "update Booking b set b.status = :status where b.id in :bookingIds")
+    int updateStatusByIdIn(@Param("status") BookingStatus status, @Param("bookingIds") List<Long> ids);
 
 }

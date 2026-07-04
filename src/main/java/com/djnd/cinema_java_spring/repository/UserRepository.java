@@ -138,4 +138,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         @Modifying
         @Query(value = "update User u set u.name = :name where u.id = :userId")
         int updateNameUser(@Param("userId") Long userId, @Param("name") String name);
+
+        @EntityGraph(attributePaths = { "role" })
+        @Query(value = "select u from User u where u.id = :userId")
+        Optional<User> findWithDetailRoleById(@Param("userId") Long userId);
 }

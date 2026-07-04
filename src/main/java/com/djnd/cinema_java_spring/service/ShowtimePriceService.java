@@ -1,6 +1,11 @@
 package com.djnd.cinema_java_spring.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,7 +14,6 @@ import com.djnd.cinema_java_spring.domain.entity.ShowtimePriceMatrix;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
 import com.djnd.cinema_java_spring.repository.ShowtimePriceRepository;
 import com.djnd.cinema_java_spring.service.dto.ShowtimePriceDTO;
-import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
 import lombok.AccessLevel;
@@ -65,5 +69,15 @@ public class ShowtimePriceService {
         res.setStartTimeFrom(entity.getStartTimeFrom());
         res.setStartTimeTo(entity.getStartTimeTo());
         return res;
+    }
+
+    public Map<SeatType, BigDecimal> getPriceSeatsByStartDateTime(LocalDateTime startDateTime) {
+        String dayType = (startDateTime.getDayOfWeek().getValue() >= 5) ? "WEEKEND" : "WEEKDAY";
+
+        LocalTime showtimeAt = startDateTime.toLocalTime();
+        List<ShowtimePriceMatrix> priceMatrixList = showtimePriceRepository.findByDayAndStartTime(dayType,
+                showtimeAt);
+        return priceMatrixList.stream()
+                .collect(Collectors.toMap(ShowtimePriceMatrix::getSeatType, ShowtimePriceMatrix::getFinalPrice));
     }
 }
