@@ -32,6 +32,7 @@ public class TicketDTO {
     LocalTime endDateTime;
     String paymentMethod;
     String createdBy;
+    String cashBy;
     String ticketCode;
     BigDecimal price;
 }

@@ -1,5 +1,7 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +15,7 @@ import com.djnd.cinema_java_spring.service.TicketService;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.TicketDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
+import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 
 import jakarta.validation.constraints.Positive;
 import lombok.AccessLevel;
@@ -38,5 +41,16 @@ public class TicketResource {
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
     public ResponseEntity<TicketDTO> getTicketDetailWithCustomer(@Positive @PathVariable("id") Long ticketId) {
         return ResponseEntity.ok(ticketService.getDetailTicketCustomer(ticketId));
+    }
+
+    @GetMapping("/tickets/booking/{id}")
+    @ApiMessage("Get ticket by booking for staff")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.STAFF + "','" + AuthoritiesConstants.ADMIN + "', '"
+            + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<List<TicketDTO>> getTicketByBooking(@Positive @PathVariable("id") Long bookingId) {
+        if (bookingId == null)
+            throw new RequestInvalidException("Booking ID missing!");
+        return ResponseEntity.ok(ticketService.getTicketByBookingId(bookingId));
+
     }
 }

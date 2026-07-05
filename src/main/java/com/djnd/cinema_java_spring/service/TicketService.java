@@ -18,6 +18,7 @@ import com.djnd.cinema_java_spring.domain.entity.BookingDetail;
 import com.djnd.cinema_java_spring.domain.entity.Seat;
 import com.djnd.cinema_java_spring.domain.entity.Showtime;
 import com.djnd.cinema_java_spring.domain.entity.Ticket;
+import com.djnd.cinema_java_spring.repository.BookingRepository;
 import com.djnd.cinema_java_spring.repository.TicketRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
@@ -35,6 +36,7 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 public class TicketService {
     final TicketRepository ticketRepository;
+    final BookingRepository bookingRepository;
 
     public ResultPaginationDTO getAllTicketWithCustomer(Pageable pageable) {
         Long customerId = SecurityUtils.getCurrentUserIdOrNull();
@@ -111,6 +113,32 @@ public class TicketService {
             }
         }
 
+    }
+
+    public List<TicketDTO> getTicketByBookingId(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
+        List<TicketDTO> res = new ArrayList<>();
+        List<Ticket> tickets = ticketRepository.getTicketsByBookingId(bookingId);
+
+        for (Ticket ticket : tickets) {
+            TicketDTO ticketDTO = new TicketDTO();
+            Showtime showtime = ticket.getShowtime();
+            ticketDTO.setBookingAt(LocalDateTime.ofInstant(ticket.getCreatedDate(), ZoneOffset.systemDefault()));
+            ticketDTO.setId(ticket.getId());
+            ticketDTO.setSeatPosition(ticket.getSeat().getSeatRow() + ticket.getSeat().getSeatNo());
+            ticketDTO.setStartDateTime(showtime.getStartDateTime().toLocalTime());
+            ticketDTO.setEndDateTime(showtime.getEndDateTime().toLocalTime());
+            ticketDTO.setPrice(ticket.getPrice());
+            ticketDTO.setCreatedBy(ticket.getCreatedBy());
+            ticketDTO.setMovieTitle(showtime.getMovie().getTitle());
+            ticketDTO.setPaymentMethod(booking.getPaymentMethod());
+            ticketDTO.setReleaseDate(showtime.getStartDateTime().toLocalDate());
+            ticketDTO.setSeatType(ticket.getSeat().getType());
+            ticketDTO.setTicketCode(ticket.getCode());
+            res.add(ticketDTO);
+        }
+        return res;
     }
 
     @Transactional

@@ -36,4 +36,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     @Query(value = "select concat(s.seatRow, s.seatNo) from Ticket t join t.seat s where t.showtime.id = :showtimeId and t.seat.id in :seatIds")
     List<String> getSeatsPositionSold(@Param("showtimeId") Long showtimeId, @Param("seatIds") List<Integer> seatIds);
+
+    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat" })
+    @Query(value = "select t from Ticket t where t.booking.id = :bookingId")
+    List<Ticket> getTicketsByBookingId(@Param("bookingId") Long bookingId);
 }

@@ -195,6 +195,7 @@ public class BookingService {
                 this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIdsAvaliables);
                 res.setBookingId(booking.getId());
                 res.setStatus(success.toString());
+
             }
             return res;
 
