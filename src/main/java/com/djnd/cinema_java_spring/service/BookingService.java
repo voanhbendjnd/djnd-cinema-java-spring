@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -34,8 +36,11 @@ import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
+import com.djnd.cinema_java_spring.service.dto.PublishBookingDTO;
 import com.djnd.cinema_java_spring.service.dto.ResBookingDTO;
+import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.UserDTO;
+import com.djnd.cinema_java_spring.service.projection.PublishCustomerBookingProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.SeatOccupiedException;
@@ -435,4 +440,35 @@ public class BookingService {
         return dto;
     }
 
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getAllBookingWithPagination(Pageable pageable, String q) {
+        var res = new ResultPaginationDTO();
+        var meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        Page<Booking> page = bookingRepository.fetchAllWithPagination(q != null ? q : "", pageable);
+        meta.setPage(page.getTotalPages());
+        meta.setTotal(page.getTotalElements());
+        res.setMeta(meta);
+        List<PublishBookingDTO> publish = page.getContent().stream().map(booking -> {
+            return PublishBookingDTO.builder()
+                    .id(booking.getId())
+                    .bookingCode(booking.getBookingCode())
+                    .createdBy(booking.getCreatedBy())
+                    .createdDate(booking.getCreatedDate())
+                    .lastModifiedBy(booking.getLastModifiedBy())
+                    .lastModifiedDate(booking.getLastModifiedDate())
+                    .paymentMethod(booking.getPaymentMethod())
+                    .status(booking.getStatus())
+                    .totalAmount(booking.getTotalAmount()).build();
+        }).toList();
+        res.setResult(publish);
+        return res;
+    }
+
+    @Transactional(readOnly = true)
+    public PublishCustomerBookingProjection getPublishBookingDetail(Long bookingId) {
+        return bookingRepository.getPublishCustomerBookingDetailById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
+    }
 }
