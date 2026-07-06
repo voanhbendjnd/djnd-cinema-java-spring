@@ -23,6 +23,7 @@ import com.djnd.cinema_java_spring.repository.TicketRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.TicketDTO;
+import com.djnd.cinema_java_spring.service.realtime.SeatRealtime;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
@@ -37,6 +38,7 @@ import lombok.experimental.FieldDefaults;
 public class TicketService {
     final TicketRepository ticketRepository;
     final BookingRepository bookingRepository;
+    final SeatRealtime seatRealtime;
 
     public ResultPaginationDTO getAllTicketWithCustomer(Pageable pageable) {
         Long customerId = SecurityUtils.getCurrentUserIdOrNull();
@@ -159,7 +161,9 @@ public class TicketService {
                 saveTickets.add(newTicket);
             }
             try {
-                return ticketRepository.saveAll(saveTickets);
+                saveTickets = ticketRepository.saveAll(saveTickets);
+                seatRealtime.sendSeatSold(showtimeId, seatIds);
+                return saveTickets;
 
             } catch (DataIntegrityViolationException ex) {
                 throw new RequestInvalidException("Seat had already exist ticket!");
