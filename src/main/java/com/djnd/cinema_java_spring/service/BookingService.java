@@ -39,7 +39,10 @@ import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
 import com.djnd.cinema_java_spring.service.dto.PublishBookingDTO;
 import com.djnd.cinema_java_spring.service.dto.ResBookingDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
+// import com.djnd.cinema_java_spring.service.dto.TicketDTO;
+// import com.djnd.cinema_java_spring.service.dto.TicketMailEvent;
 import com.djnd.cinema_java_spring.service.dto.UserDTO;
+// import com.djnd.cinema_java_spring.service.producer.TicketEventProducer;
 import com.djnd.cinema_java_spring.service.projection.PublishCustomerBookingProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -70,6 +73,7 @@ public class BookingService {
     final BookingDetailRepository bookingDetailRepository;
     final UserRepository userRepository;
     final BookingDetailService bookingDetailService;
+    // final TicketEventProducer ticketEventProducer;
     final PaymentHistoryRepository paymentHistoryRepository;
     private static final String EXPIRE_TIME_HOLDING_SEATS = "600"; // 10 minutes
     static final String LUA_HOLD_SEATS_AT_SHOWTIME = "local showtimeKey = KEYS[1] " +
@@ -392,8 +396,18 @@ public class BookingService {
             paymentHistoryRepository.save(history);
             // init & save tickets
             ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIds, showtimeId);
-            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIds);
 
+            // call producer
+            // User customer = booking.getCustomer().getUser();
+            // List<TicketDTO> tickets = ticketService.getTicketByBookingId(bookingId);
+            // TicketMailEvent event = TicketMailEvent.builder()
+            // .customerEmail(customer.getEmail())
+            // .customerName(customer.getName())
+            // .tickets(tickets)
+            // .build();
+            // ticketEventProducer.sendTicketMailEvent(event);
+
+            this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIds);
             response.put("RspCode", "00");
             response.put("Message", "Confirm Success");
             return response;

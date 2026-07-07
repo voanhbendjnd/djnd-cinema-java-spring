@@ -8,10 +8,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.djnd.cinema_java_spring.domain.entity.Booking;
 import com.djnd.cinema_java_spring.domain.enumeration.BookingStatus;
 import com.djnd.cinema_java_spring.repository.BookingDetailRepository;
 import com.djnd.cinema_java_spring.repository.BookingRepository;
@@ -41,6 +39,7 @@ public class BookingCleanupSchedule {
             List<Long> bookingIds = expiredItems.stream().map(x -> x.bookingId()).toList();
             bookingRepository.updateStatusByIdIn(BookingStatus.CANCELLED, bookingIds);
             bookingDetailRepository.deleteByBookingIdIn(bookingIds);
+
             Map<Long, List<Integer>> seatsByShowtime = expiredItems.stream()
                     .collect(Collectors.groupingBy(BookingSeatProjection::showtimeId,
                             Collectors.mapping(BookingSeatProjection::seatId, Collectors.toList())));

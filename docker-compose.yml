@@ -17,3 +17,19 @@ services:
     restart: always
     ports:
       - "6379:6379"
+  # zookeeper:
+  #   image: wurstmeister/zookeeper:latest
+  #   container_name: zookeeper-djnd-cinema
+  #   ports:
+  #     - "2181:2181"
+
+  # kafka-broker:
+  #   image: wurstmeister/kafka:latest
+  #   container_name: kafka-broker-djnd-cinema
+  #   ports:
+  #     - "9092:9092"
+  #   environment:
+  #     KAFKA_ADVERTISED_HOST_NAME: localhost
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #   depends_on:
+  #     - zookeeper

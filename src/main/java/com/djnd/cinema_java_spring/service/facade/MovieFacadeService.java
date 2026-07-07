@@ -125,6 +125,17 @@ public class MovieFacadeService {
         return movieRepository.getPublishMovie(MovieStatus.SHOWING);
     }
 
+    @Transactional(readOnly = true)
+    public List<PublishMovieProjection> getPublishMoviesByStatus(String statusParam) {
+        if (statusParam.equalsIgnoreCase(MovieStatus.SHOWING.toString())) {
+            return movieRepository.getPublishMovie(MovieStatus.SHOWING);
+        } else {
+            return movieRepository.getPublishMovie(MovieStatus.UPCOMING);
+
+        }
+
+    }
+
     public ResultPaginationDTO getAllMovieWithPagination(Pageable pageable, String q) {
         var res = new ResultPaginationDTO();
         var meta = new ResultPaginationDTO.Meta();

@@ -15,6 +15,7 @@ import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
+import com.djnd.cinema_java_spring.service.dto.TicketMailEvent;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -97,4 +98,23 @@ public class MailService {
         LOG.debug("Sending password reset email to '{}'", user.getEmail());
         sendEmailFromTemplateSync(user, "mail/passwordResetEmail", "email.reset.title");
     }
+
+    @Async
+    public void sendTicketMailBooking(TicketMailEvent event) {
+        this.sendEmailTicketFromTemplateSync(event, "mail/ticketMailEventEmail", "email.ticket.event");
+    }
+
+    private void sendEmailTicketFromTemplateSync(TicketMailEvent event, String templateName,
+            String titleKey) {
+        if (event.getCustomerEmail() == null) {
+            return;
+        }
+        Locale locale = Locale.forLanguageTag("en");
+        Context context = new Context(locale);
+        context.setVariable("ticketMailEvent", event);
+        String content = springTemplateEngine.process(templateName, context);
+        String subject = messageSource.getMessage(titleKey, null, locale);
+        sendEmailSync(event.getCustomerEmail(), subject, content, false, true);
+    }
+
 }

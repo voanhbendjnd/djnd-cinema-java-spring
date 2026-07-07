@@ -24,6 +24,7 @@ import lombok.experimental.FieldDefaults;
 public class TicketDTO {
     Long id;
     String movieTitle;
+    String roomName;
     LocalDateTime bookingAt;
     LocalDate releaseDate;
     String seatPosition;

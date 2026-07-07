@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Confirmation</title>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 30px;
+            background: #f3f5f7;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #333333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .08);
+        }
+
+        .header {
+            background: #141414;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .content {
+            padding: 35px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            color: #0d6efd;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #eeeeee;
+            padding-bottom: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #0d6efd;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            border: 1px solid #dddddd;
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        .info-table td:first-child {
+            width: 180px;
+            font-weight: bold;
+            background: #f7f7f7;
+        }
+
+        .price {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 25px;
+            background: #fafafa;
+            color: #777777;
+            font-size: 13px;
+        }
+
+        .ticket-title {
+            margin-top: 35px;
+            margin-bottom: 15px;
+            font-size: 22px;
+            color: #198754;
+        }
+
+        .code {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e65100;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <div class="header">
+            <h1>🎬 Cinema Ticket Confirmation</h1>
+            <p>Thank you for your booking.</p>
+        </div>
+
+        <div class="content">
+
+            <div class="section-title">
+                Customer Information
+            </div>
+
+            <table class="info-table">
+                <tr>
+                    <td>Customer Name</td>
+                    <td th:text="${ticketMailEvent.customerName}"></td>
+                </tr>
+
+                <tr>
+                    <td>Email</td>
+                    <td th:text="${ticketMailEvent.customerEmail}"></td>
+                </tr>
+
+                <tr>
+                    <td>Total Tickets</td>
+                    <td th:text="${#lists.size(ticketMailEvent.tickets)}"></td>
+                </tr>
+            </table>
+
+            <div class="ticket-title">
+                Ticket Details
+            </div>
+
+            <div th:each="ticket, stat : ${ticketMailEvent.tickets}">
+
+                <h3>
+                    Ticket #
+                    <span th:text="${stat.count}"></span>
+                </h3>
+
+                <table>
+
+                    <tr>
+                        <th colspan="2">
+                            Ticket Information
+                        </th>
+                    </tr>
+
+                    <tr>
+                        <td>Ticket Code</td>
+                        <td class="code" th:text="${ticket.ticketCode}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Movie</td>
+                        <td th:text="${ticket.movieTitle}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Room</td>
+                        <td th:text="${ticket.roomName}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Seat</td>
+                        <td th:text="${ticket.seatPosition}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Seat Type</td>
+                        <td th:text="${ticket.seatType}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Release Date</td>
+                        <td th:text="${#temporals.format(ticket.releaseDate,'dd/MM/yyyy')}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Booking Time</td>
+                        <td th:text="${#temporals.format(ticket.bookingAt,'dd/MM/yyyy HH:mm')}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Show Time</td>
+                        <td>
+                            <span th:text="${#temporals.format(ticket.startDateTime,'HH:mm')}"></span>
+                            -
+                            <span th:text="${#temporals.format(ticket.endDateTime,'HH:mm')}"></span>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>Payment Method</td>
+                        <td th:text="${ticket.paymentMethod}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Created By</td>
+                        <td th:text="${ticket.createdBy}"></td>
+                    </tr>
+
+                    <tr th:if="${ticket.cashBy != null}">
+                        <td>Cashier</td>
+                        <td th:text="${ticket.cashBy}"></td>
+                    </tr>
+
+                    <tr>
+                        <td>Price</td>
+                        <td class="price">
+                            <span th:text="${#numbers.formatDecimal(ticket.price,0,'COMMA',0,'POINT')}"></span>
+                            VND
+                        </td>
+                    </tr>
+
+                </table>
+
+                <br />
+
+            </div>
+
+        </div>
+
+        <div class="footer">
+            This email was generated automatically by the Cinema Booking System.<br />
+            Please do not reply to this email.<br /><br />
+            We wish you a wonderful movie experience 🍿
+        </div>
+
+    </div>
+
+</body>
+
+</html>

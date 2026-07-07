@@ -70,6 +70,7 @@ public class TicketService {
                     .releaseDate(showtime.getStartDateTime().toLocalDate())
                     .movieTitle(movieTitle)
                     .seatType(seat.getType())
+                    .roomName(showtime.getRoom().getName())
                     .seatPosition(seatPosition)
                     .build();
         }).toList());
@@ -104,6 +105,7 @@ public class TicketService {
                 .createdBy(ticket.getCreatedBy())
                 .ticketCode(ticket.getCode())
                 .price(ticket.getPrice())
+                .roomName(showtime.getRoom().getName())
                 .build();
     }
 
@@ -138,6 +140,7 @@ public class TicketService {
             ticketDTO.setReleaseDate(showtime.getStartDateTime().toLocalDate());
             ticketDTO.setSeatType(ticket.getSeat().getType());
             ticketDTO.setTicketCode(ticket.getCode());
+            ticketDTO.setRoomName(showtime.getRoom().getName());
             res.add(ticketDTO);
         }
         return res;

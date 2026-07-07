@@ -25,11 +25,11 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     boolean existsByShowtimeIdAndSeatIdIn(Long showtimeId, List<Integer> seatIds);
 
-    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "booking" })
+    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "booking", "showtime.room" })
     @Query(value = "select t from Ticket t join t.booking b where b.customer.id = :customerId", countQuery = "select count(t) from Ticket t join t.booking b where b.customer.id = :customerId")
     Page<Ticket> getTicketsWithCustomerId(@Param("customerId") Long customerId, Pageable pageable);
 
-    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "booking" })
+    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "booking", "showtime.room" })
     @Query(value = "select t from Ticket t join t.booking b where b.customer.id = :customerId and t.id = :ticketId")
     Optional<Ticket> getTickeWithDetailByCustomerIdAndId(@Param("customerId") Long customerId,
             @Param("ticketId") Long ticketId);
@@ -37,7 +37,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     @Query(value = "select concat(s.seatRow, s.seatNo) from Ticket t join t.seat s where t.showtime.id = :showtimeId and t.seat.id in :seatIds")
     List<String> getSeatsPositionSold(@Param("showtimeId") Long showtimeId, @Param("seatIds") List<Integer> seatIds);
 
-    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat" })
+    @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "showtime.room" })
     @Query(value = "select t from Ticket t where t.booking.id = :bookingId")
     List<Ticket> getTicketsByBookingId(@Param("bookingId") Long bookingId);
 }

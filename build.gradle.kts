@@ -57,6 +57,9 @@ dependencies {
     implementation("org.ehcache:ehcache:3.10.8:jakarta")
     // connect hibernate 6 with jcache
     implementation("org.hibernate.orm:hibernate-jcache")
+    //kafka
+    implementation ("org.springframework.kafka:spring-kafka")
+
 
 
 
