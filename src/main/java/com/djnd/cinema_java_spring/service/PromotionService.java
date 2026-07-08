@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,11 +34,11 @@ public class PromotionService {
     private String computeStatus(Promotion p) {
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(p.getStartTime())) {
-            return "Upcoming";
+            return "UPCOMING";
         } else if (now.isAfter(p.getEndTime())) {
-            return "Expired";
+            return "EXPIRED";
         } else {
-            return "Active";
+            return "ACTIVE";
         }
     }
 
@@ -182,5 +181,21 @@ public class PromotionService {
         }
 
         promotionRepository.delete(promotion);
+    }
+
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getVoucherForCustomer(String q, Pageable pageable) {
+        var res = new ResultPaginationDTO();
+        var meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        Page<Promotion> page = promotionRepository.fetchVoucherAvaibleAndAcitveWithPagination(pageable,
+                q != null ? q.toLowerCase() : "", true,
+                LocalDateTime.now());
+        meta.setPages(page.getTotalPages());
+        meta.setTotal(page.getTotalElements());
+        res.setMeta(meta);
+        res.setResult(page.getContent().stream().map(this::toDTO).toList());
+        return res;
     }
 }

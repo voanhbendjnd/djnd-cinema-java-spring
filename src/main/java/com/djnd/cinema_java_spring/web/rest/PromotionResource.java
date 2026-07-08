@@ -17,22 +17,27 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
+import com.djnd.cinema_java_spring.service.CustomerVoucherService;
 import com.djnd.cinema_java_spring.service.PromotionService;
 import com.djnd.cinema_java_spring.service.dto.PromotionDTO;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
+import com.djnd.cinema_java_spring.service.dto.VoucherCollectResultDTO;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
+import com.djnd.cinema_java_spring.web.rest.vm.ClaimVoucherVM;
 
 import jakarta.validation.Valid;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @RestController
 @RequestMapping("/api/promotions")
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
 public class PromotionResource {
 
-    private final PromotionService promotionService;
-
-    public PromotionResource(PromotionService promotionService) {
-        this.promotionService = promotionService;
-    }
+    final PromotionService promotionService;
+    final CustomerVoucherService customerVoucherService;
 
     /**
      * GET /api/promotions
@@ -94,4 +99,20 @@ public class PromotionResource {
         promotionService.delete(id);
         return ResponseEntity.ok(null);
     }
+
+    @GetMapping("/customer")
+    @ApiMessage("Get voucher for customer")
+    public ResponseEntity<ResultPaginationDTO> getVoucherForCustomer(
+            @RequestParam(name = "q", required = true) String q, Pageable pageable) {
+        return ResponseEntity.ok(promotionService.getVoucherForCustomer(q, pageable));
+    }
+
+    @PostMapping("/vouchers/collect")
+    @ApiMessage("Claim voucher by customer")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+
+    public ResponseEntity<VoucherCollectResultDTO> claimVoucher(@RequestBody ClaimVoucherVM vm) {
+        return ResponseEntity.ok(customerVoucherService.collectVouchersByCustomer(vm.voucherIds()));
+    }
+
 }

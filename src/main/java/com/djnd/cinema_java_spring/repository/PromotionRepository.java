@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,4 +28,8 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     Long countByIdIn(List<Long> promotionIds);
 
     List<Promotion> findByIdIn(List<Long> promotionIds);
+
+    @Query(value = "SELECT p FROM Promotion p WHERE lower(p.title) like concat('%', :q, '%') and p.releaseDate <= :current and p.isActive = :active", countQuery = "SELECT count(p) FROM Promotion p WHERE lower(p.title) like concat('%', :q, '%') and p.releaseDate >= :current and p.isActive = :active")
+    Page<Promotion> fetchVoucherAvaibleAndAcitveWithPagination(Pageable pageable, @Param("q") String q,
+            @Param("active") boolean isActive, @Param("current") LocalDateTime current);
 }
