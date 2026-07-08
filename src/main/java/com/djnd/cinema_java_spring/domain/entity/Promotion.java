@@ -3,16 +3,29 @@ package com.djnd.cinema_java_spring.domain.entity;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "promotions")
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Promotion extends AbstractAuditingEntity<Long> implements Serializable {
 
     @Serial
@@ -36,80 +49,17 @@ public class Promotion extends AbstractAuditingEntity<Long> implements Serializa
 
     @Column(name = "end_time", nullable = false)
     private LocalDateTime endTime;
-
+    private LocalDateTime releaseDate;
+    @NotNull
+    @Column(name = "quantiy", nullable = false)
+    private Integer quantity;
+    @NotNull
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = false;
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;
 
-    // No-arg constructor
-    public Promotion() {
-    }
+    @OneToMany(mappedBy = "voucher", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<CustomerVoucher> customerVouchers = new ArrayList<>();
 
-    // All-args constructor
-    public Promotion(Long id, String title, String detail, Double discountPercentage,
-                     LocalDateTime startTime, LocalDateTime endTime, String thumbnailUrl) {
-        this.id = id;
-        this.title = title;
-        this.detail = detail;
-        this.discountPercentage = discountPercentage;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.thumbnailUrl = thumbnailUrl;
-    }
-
-    @Override
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDetail() {
-        return detail;
-    }
-
-    public void setDetail(String detail) {
-        this.detail = detail;
-    }
-
-    public Double getDiscountPercentage() {
-        return discountPercentage;
-    }
-
-    public void setDiscountPercentage(Double discountPercentage) {
-        this.discountPercentage = discountPercentage;
-    }
-
-    public LocalDateTime getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(LocalDateTime startTime) {
-        this.startTime = startTime;
-    }
-
-    public LocalDateTime getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(LocalDateTime endTime) {
-        this.endTime = endTime;
-    }
-
-    public String getThumbnailUrl() {
-        return thumbnailUrl;
-    }
-
-    public void setThumbnailUrl(String thumbnailUrl) {
-        this.thumbnailUrl = thumbnailUrl;
-    }
 }

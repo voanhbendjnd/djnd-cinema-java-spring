@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -22,4 +23,8 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     boolean existsByTitleIgnoreCase(String title);
 
     boolean existsByTitleIgnoreCaseAndIdNot(String title, Long id);
+
+    Long countByIdIn(List<Long> promotionIds);
+
+    List<Promotion> findByIdIn(List<Long> promotionIds);
 }

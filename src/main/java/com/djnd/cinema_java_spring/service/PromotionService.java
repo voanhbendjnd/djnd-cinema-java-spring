@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +54,9 @@ public class PromotionService {
         dto.setDiscountPercentage(p.getDiscountPercentage());
         dto.setStartTime(p.getStartTime());
         dto.setEndTime(p.getEndTime());
+        dto.setActive(p.isActive());
+        dto.setReleaseDate(p.getReleaseDate());
+        dto.setQuantity(p.getQuantity());
         dto.setThumbnailUrl(p.getThumbnailUrl());
         dto.setStatus(computeStatus(p));
         return dto;
@@ -87,9 +91,15 @@ public class PromotionService {
         if (promotionRepository.existsByTitleIgnoreCase(dto.getTitle())) {
             throw new RequestInvalidException("Duplicate promo code");
         }
+        if (dto.getQuantity() < 0) {
+            throw new RequestInvalidException("Quantity voucher must be greater than zero!");
+        }
 
         Promotion promotion = new Promotion();
         promotion.setTitle(dto.getTitle());
+        promotion.setQuantity(dto.getQuantity());
+        promotion.setActive(dto.isActive());
+        promotion.setReleaseDate(dto.getReleaseDate());
         promotion.setDetail(dto.getDetail());
         promotion.setDiscountPercentage(dto.getDiscountPercentage());
         promotion.setStartTime(dto.getStartTime());
@@ -149,6 +159,13 @@ public class PromotionService {
             promotion.setEndTime(dto.getEndTime());
         if (dto.getThumbnailUrl() != null)
             promotion.setThumbnailUrl(dto.getThumbnailUrl());
+        if (dto.getReleaseDate() != null) {
+            promotion.setReleaseDate(dto.getReleaseDate());
+        }
+        if (dto.getQuantity() != null && dto.getQuantity() >= 0) {
+            promotion.setQuantity(dto.getQuantity());
+        }
+        promotion.setActive(dto.isActive());
 
         return toDTO(promotionRepository.save(promotion));
     }

@@ -45,5 +45,8 @@ public class Customer {
     @Builder.Default
     @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Booking> bookings = new ArrayList<>();
+    @OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    List<CustomerVoucher> customerVouchers = new ArrayList<>();
 
 }

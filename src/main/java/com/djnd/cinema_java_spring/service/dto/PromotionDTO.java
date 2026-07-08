@@ -2,11 +2,17 @@ package com.djnd.cinema_java_spring.service.dto;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class PromotionDTO {
 
     private Long id;
@@ -31,45 +37,12 @@ public class PromotionDTO {
 
     // Status is not persisted; computed dynamically
     private String status;
+    @NotNull
+    @JsonProperty("isActive")
+    private boolean isActive;
+    @NotNull
+    private Integer quantity;
+    @NotNull
+    private LocalDateTime releaseDate;
 
-    // No-arg constructor
-    public PromotionDTO() {
-    }
-
-    // All-args constructor
-    public PromotionDTO(Long id, String title, String detail, Double discountPercentage,
-                        LocalDateTime startTime, LocalDateTime endTime, String thumbnailUrl, String status) {
-        this.id = id;
-        this.title = title;
-        this.detail = detail;
-        this.discountPercentage = discountPercentage;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.thumbnailUrl = thumbnailUrl;
-        this.status = status;
-    }
-
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getTitle() { return title; }
-    public void setTitle(String title) { this.title = title; }
-
-    public String getDetail() { return detail; }
-    public void setDetail(String detail) { this.detail = detail; }
-
-    public Double getDiscountPercentage() { return discountPercentage; }
-    public void setDiscountPercentage(Double discountPercentage) { this.discountPercentage = discountPercentage; }
-
-    public LocalDateTime getStartTime() { return startTime; }
-    public void setStartTime(LocalDateTime startTime) { this.startTime = startTime; }
-
-    public LocalDateTime getEndTime() { return endTime; }
-    public void setEndTime(LocalDateTime endTime) { this.endTime = endTime; }
-
-    public String getThumbnailUrl() { return thumbnailUrl; }
-    public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
 }
