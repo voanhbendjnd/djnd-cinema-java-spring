@@ -17,6 +17,7 @@ public class ResultPaginationDTO implements Serializable {
     Meta meta;
     Object result;
 
+
     @Getter
     @Setter
     @FieldDefaults(level = AccessLevel.PRIVATE)

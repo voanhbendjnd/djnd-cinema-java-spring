@@ -40,4 +40,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             where u.id = :userId
             """)
     Optional<AccountCustomerProjection> getInformationProfileUserById(@Param("userId") Long userId);
+
+    @Query(value = "select exists(select 1 from Customer c where c.id = :customerId)")
+    boolean existByCustomerId(@Param("customerId") Long customerId);
 }

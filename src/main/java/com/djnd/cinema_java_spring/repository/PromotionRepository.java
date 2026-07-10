@@ -19,7 +19,6 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     @Query("SELECT p FROM Promotion p WHERE (:q IS NULL OR :q = '' OR LOWER(p.title) LIKE LOWER(CONCAT('%', :q, '%')))")
     Page<Promotion> fetchAllWithPagination(Pageable pageable, @Param("q") String q);
 
-    Optional<Promotion> findById(Long id);
 
     boolean existsByTitleIgnoreCase(String title);
 
@@ -29,7 +28,28 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
 
     List<Promotion> findByIdIn(List<Long> promotionIds);
 
-    @Query(value = "SELECT p FROM Promotion p WHERE lower(p.title) like concat('%', :q, '%') and p.releaseDate <= :current and p.isActive = :active", countQuery = "SELECT count(p) FROM Promotion p WHERE lower(p.title) like concat('%', :q, '%') and p.releaseDate >= :current and p.isActive = :active")
-    Page<Promotion> fetchVoucherAvaibleAndAcitveWithPagination(Pageable pageable, @Param("q") String q,
-            @Param("active") boolean isActive, @Param("current") LocalDateTime current);
+    @Query(value = """
+            SELECT p FROM Promotion p
+            WHERE lower(p.title) like concat('%', :q, '%') and p.releaseDate <= :current and p.isActive = :active
+            and not exists(
+                select cv from CustomerVoucher cv
+                where
+                cv.voucher = p and
+                cv.customer.userId = :customerId
+            )
+            """, countQuery = """
+            SELECT count(p) FROM Promotion p
+                   WHERE lower(p.title) like concat('%', :q, '%') and p.releaseDate <= :current and p.isActive = :active
+                   and not exists(
+                       select cv from CustomerVoucher cv
+                       where
+                        cv.voucher = p and
+                       cv.customer.userId = :customerId
+                   )
+            """
+
+    )
+    Page<Promotion> fetchVoucherAvailableAndActiveWithPagination(Pageable pageable, @Param("q") String q,
+            @Param("active") boolean isActive, @Param("current") LocalDateTime current,
+            @Param("customerId") Long customerId);
 }

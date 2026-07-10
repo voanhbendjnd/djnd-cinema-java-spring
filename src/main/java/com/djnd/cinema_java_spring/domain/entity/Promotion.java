@@ -51,7 +51,7 @@ public class Promotion extends AbstractAuditingEntity<Long> implements Serializa
     private LocalDateTime endTime;
     private LocalDateTime releaseDate;
     @NotNull
-    @Column(name = "quantiy", nullable = false)
+    @Column(name = "quantity", nullable = false)
     private Integer quantity;
     @NotNull
     @Column(name = "is_active", nullable = false)

@@ -4,7 +4,6 @@ import java.util.List;
 
 import javax.crypto.SecretKey;
 
-import org.apache.commons.math3.analysis.function.Constant;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -72,7 +71,6 @@ public class SecurityConfiguration {
                 Constants.VERSION_API + "/account/activate/**",
                 Constants.VERSION_API + "/account/reset-password/init",
                 Constants.VERSION_API + "/account/reset-password/finish",
-                Constants.VERSION_API + "/promotions/customer",
                 Constants.VERSION_API + "/files/**");
         http
                 .cors(cors -> cors.configurationSource(corsConfig))
@@ -99,7 +97,6 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST,
                                         Constants.VERSION_API + "/account/reset-password/finish")
                                 .permitAll()
-                                .requestMatchers(HttpMethod.GET, "/api/promotions/customer").permitAll()
                                 .requestMatchers(whiteList).permitAll()
                                 .anyRequest().authenticated())
                 // check token when fe send request

@@ -4,7 +4,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.djnd.cinema_java_spring.service.dto.ResultPaginationVoucherCursor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,10 +19,12 @@ import com.djnd.cinema_java_spring.repository.CustomerRepository;
 import com.djnd.cinema_java_spring.repository.CustomerVoucherRepository;
 import com.djnd.cinema_java_spring.repository.PromotionRepository;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
+import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.VoucherCollectResultDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
+import com.djnd.cinema_java_spring.web.rest.errors.UserAccessDeniedException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +37,7 @@ public class CustomerVoucherService {
     final CustomerVoucherRepository customerVoucherRepository;
     final CustomerRepository customerRepository;
     final PromotionRepository promotionRepository;
+    final PromotionService promotionService;
 
     @Transactional
     public VoucherCollectResultDTO collectVouchersByCustomer(List<Long> voucherIds) {
@@ -94,6 +101,59 @@ public class CustomerVoucherService {
         VoucherCollectResultDTO res = new VoucherCollectResultDTO();
         res.setErrorMessages(errorMessages);
         res.setSuccessTitles(successTitles);
+        return res;
+    }
+
+    @Transactional(readOnly = true)
+    public ResultPaginationDTO getVoucherForCustomerClaim(String q, Pageable pageable) {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new UnauthorizedException("User not found!");
+        }
+        if (!customerRepository.existByCustomerId(userId)) {
+            throw new UserAccessDeniedException("You do not have permission!");
+        }
+        var res = new ResultPaginationDTO();
+        var meta = new ResultPaginationDTO.Meta();
+        meta.setPage(pageable.getPageNumber() + 1);
+        meta.setPageSize(pageable.getPageSize());
+        Page<Promotion> page = promotionRepository.fetchVoucherAvailableAndActiveWithPagination(pageable,
+                q != null ? q.toLowerCase() : "", true,
+                LocalDateTime.now(), userId);
+        meta.setPages(page.getTotalPages());
+        meta.setTotal(page.getTotalElements());
+        res.setMeta(meta);
+        res.setResult(page.getContent().stream().map(promotionService::toDTO).toList());
+        return res;
+    }
+
+    @Transactional
+    public ResultPaginationVoucherCursor getVoucherAvailableByCustomerAlreadyClaim(int size, LocalDateTime cursor, Long voucherId) {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new UnauthorizedException("You are not logged in!");
+        }
+        if(!customerRepository.existByCustomerId(userId)) {
+            throw new UserAccessDeniedException("You do not have permission!");
+        }
+
+        Pageable pageable = PageRequest.of(0, size + 1);
+        List<Promotion> voucherCustomerAvailable = customerVoucherRepository.getVoucherCustomerWithCursor(userId,voucherId, cursor, pageable);
+        boolean hasMore = voucherCustomerAvailable.size() > size;
+        if(hasMore) {
+            voucherCustomerAvailable.removeLast();
+        }
+        var res = new ResultPaginationVoucherCursor();
+        Long nextVoucherId = null;
+        LocalDateTime nextCursor = null;
+        if(!voucherCustomerAvailable.isEmpty()) {
+            nextVoucherId = voucherCustomerAvailable.getLast().getId();
+            nextCursor = voucherCustomerAvailable.getLast().getStartTime();
+        }
+        res.setVoucherId(nextVoucherId);
+        res.setNextCursor(nextCursor);
+        res.setHasMore(hasMore);
+        res.setResult(voucherCustomerAvailable);
         return res;
     }
 }

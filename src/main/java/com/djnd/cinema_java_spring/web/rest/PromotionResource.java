@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import com.djnd.cinema_java_spring.service.dto.ResultPaginationVoucherCursor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -29,6 +30,8 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/promotions")
@@ -104,7 +107,7 @@ public class PromotionResource {
     @ApiMessage("Get voucher for customer")
     public ResponseEntity<ResultPaginationDTO> getVoucherForCustomer(
             @RequestParam(name = "q", required = true) String q, Pageable pageable) {
-        return ResponseEntity.ok(promotionService.getVoucherForCustomer(q, pageable));
+        return ResponseEntity.ok(customerVoucherService.getVoucherForCustomerClaim(q, pageable));
     }
 
     @PostMapping("/vouchers/collect")
@@ -113,6 +116,13 @@ public class PromotionResource {
 
     public ResponseEntity<VoucherCollectResultDTO> claimVoucher(@RequestBody ClaimVoucherVM vm) {
         return ResponseEntity.ok(customerVoucherService.collectVouchersByCustomer(vm.voucherIds()));
+    }
+
+    @GetMapping
+    @ApiMessage("Get voucher already claim")
+    public ResponseEntity<ResultPaginationVoucherCursor>getVoucherCursorResponseEntity(
+            Pageable pageable, @RequestParam(name = "size", required = false)Integer size, @RequestParam(name = "cursor", required = false) LocalDateTime cursor, @RequestParam(name = "voucherId", required = false) Long voucherId) {
+        return ResponseEntity.ok(customerVoucherService.getVoucherAvailableByCustomerAlreadyClaim(size, cursor, voucherId));
     }
 
 }

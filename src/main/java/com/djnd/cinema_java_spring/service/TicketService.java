@@ -83,7 +83,7 @@ public class TicketService {
         if (customerId == null) {
             throw new UnauthorizedException("You are not logged in!");
         }
-        Ticket ticket = ticketRepository.getTickeWithDetailByCustomerIdAndId(customerId, ticketId)
+        Ticket ticket = ticketRepository.getTicketWithDetailByCustomerIdAndId(customerId, ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found!"));
         LocalDateTime bookingAt = LocalDateTime.ofInstant(ticket.getCreatedDate(), ZoneOffset.systemDefault());
         Showtime showtime = ticket.getShowtime();

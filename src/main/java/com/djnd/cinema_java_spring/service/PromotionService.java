@@ -16,17 +16,19 @@ import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
 
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+
 @Service
 @Transactional
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@RequiredArgsConstructor
 public class PromotionService {
 
     private static final Logger log = LoggerFactory.getLogger(PromotionService.class);
 
-    private final PromotionRepository promotionRepository;
-
-    public PromotionService(PromotionRepository promotionRepository) {
-        this.promotionRepository = promotionRepository;
-    }
+    final PromotionRepository promotionRepository;
 
     // -------------------------------------------------------
     // Helper: compute status dynamically
@@ -45,7 +47,7 @@ public class PromotionService {
     // -------------------------------------------------------
     // Helper: map entity → DTO
     // -------------------------------------------------------
-    private PromotionDTO toDTO(Promotion p) {
+    public PromotionDTO toDTO(Promotion p) {
         PromotionDTO dto = new PromotionDTO();
         dto.setId(p.getId());
         dto.setTitle(p.getTitle());
@@ -183,19 +185,4 @@ public class PromotionService {
         promotionRepository.delete(promotion);
     }
 
-    @Transactional(readOnly = true)
-    public ResultPaginationDTO getVoucherForCustomer(String q, Pageable pageable) {
-        var res = new ResultPaginationDTO();
-        var meta = new ResultPaginationDTO.Meta();
-        meta.setPage(pageable.getPageNumber() + 1);
-        meta.setPageSize(pageable.getPageSize());
-        Page<Promotion> page = promotionRepository.fetchVoucherAvaibleAndAcitveWithPagination(pageable,
-                q != null ? q.toLowerCase() : "", true,
-                LocalDateTime.now());
-        meta.setPages(page.getTotalPages());
-        meta.setTotal(page.getTotalElements());
-        res.setMeta(meta);
-        res.setResult(page.getContent().stream().map(this::toDTO).toList());
-        return res;
-    }
 }
