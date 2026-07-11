@@ -21,5 +21,6 @@ public class BookingRequestDTO {
     String paymentMethod;
     Long customerId;
     Boolean isNotMember;
+    Long voucherId;
 
 }

@@ -128,32 +128,54 @@ public class CustomerVoucherService {
     }
 
     @Transactional
-    public ResultPaginationVoucherCursor getVoucherAvailableByCustomerAlreadyClaim(int size, LocalDateTime cursor, Long voucherId) {
+    public ResultPaginationVoucherCursor getVoucherAvailableByCustomerAlreadyClaim(int size, LocalDateTime cursor,
+            Long voucherId) {
         Long userId = SecurityUtils.getCurrentUserIdOrNull();
         if (userId == null) {
             throw new UnauthorizedException("You are not logged in!");
         }
-        if(!customerRepository.existByCustomerId(userId)) {
+        if (!customerRepository.existByCustomerId(userId)) {
             throw new UserAccessDeniedException("You do not have permission!");
         }
 
         Pageable pageable = PageRequest.of(0, size + 1);
-        List<Promotion> voucherCustomerAvailable = customerVoucherRepository.getVoucherCustomerWithCursor(userId,voucherId, cursor, pageable);
+        List<Promotion> voucherCustomerAvailable = customerVoucherRepository.getVoucherCustomerWithCursor(userId,
+                voucherId, cursor,LocalDateTime.now(), pageable);
         boolean hasMore = voucherCustomerAvailable.size() > size;
-        if(hasMore) {
+        if (hasMore) {
             voucherCustomerAvailable.removeLast();
         }
         var res = new ResultPaginationVoucherCursor();
         Long nextVoucherId = null;
         LocalDateTime nextCursor = null;
-        if(!voucherCustomerAvailable.isEmpty()) {
+        if (!voucherCustomerAvailable.isEmpty()) {
             nextVoucherId = voucherCustomerAvailable.getLast().getId();
             nextCursor = voucherCustomerAvailable.getLast().getStartTime();
         }
         res.setVoucherId(nextVoucherId);
         res.setNextCursor(nextCursor);
         res.setHasMore(hasMore);
-        res.setResult(voucherCustomerAvailable);
+        res.setResult(voucherCustomerAvailable.stream().map(promotionService::toDTO).toList());
         return res;
+    }
+
+    public Double getDiscountWithVoucherIdByCustomer(Long voucherId, Long customerId) {
+        Promotion voucher = promotionRepository.findById(voucherId)
+                .orElseThrow(() -> new ResourceNotFoundException("Voucher not found!"));
+        CustomerVoucher customerVoucher = customerVoucherRepository.findByCustomerIdAndVoucherId(customerId, voucherId).orElseThrow(()-> new ResourceNotFoundException("Your voucher does not exist or you do not own it!"));
+        LocalDateTime now = LocalDateTime.now();
+        if(customerVoucher.isUsed()){
+            throw new RequestInvalidException("This voucher has already been used!");        }
+        if (!voucher.isActive() || voucher.getEndTime().isBefore(now)) {
+                throw new RequestInvalidException("Voucher already expired!");
+        }
+        if(voucher.getStartTime().isAfter(now)) {
+            throw new RequestInvalidException("Cannot use this voucher!");
+        }
+        if(voucher.getDiscountPercentage() >= 100 || voucher.getDiscountPercentage() <= 0) {
+            throw new RequestInvalidException("Invalid voucher discount value!");
+        }
+
+        return voucher.getDiscountPercentage();
     }
 }

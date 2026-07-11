@@ -1,6 +1,7 @@
 package com.djnd.cinema_java_spring.web.rest;
 
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationVoucherCursor;
+import com.djnd.cinema_java_spring.web.rest.vm.VoucherCursorVM;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -118,11 +119,13 @@ public class PromotionResource {
         return ResponseEntity.ok(customerVoucherService.collectVouchersByCustomer(vm.voucherIds()));
     }
 
-    @GetMapping
+    @PostMapping("/customer/claimed")
     @ApiMessage("Get voucher already claim")
-    public ResponseEntity<ResultPaginationVoucherCursor>getVoucherCursorResponseEntity(
-            Pageable pageable, @RequestParam(name = "size", required = false)Integer size, @RequestParam(name = "cursor", required = false) LocalDateTime cursor, @RequestParam(name = "voucherId", required = false) Long voucherId) {
-        return ResponseEntity.ok(customerVoucherService.getVoucherAvailableByCustomerAlreadyClaim(size, cursor, voucherId));
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+    public ResponseEntity<ResultPaginationVoucherCursor> getVoucherCursorResponseEntity(
+            @RequestBody VoucherCursorVM vm) {
+        return ResponseEntity.ok(customerVoucherService.getVoucherAvailableByCustomerAlreadyClaim(vm.getSize(),
+                vm.getCursor(), vm.getVoucherId()));
     }
 
 }

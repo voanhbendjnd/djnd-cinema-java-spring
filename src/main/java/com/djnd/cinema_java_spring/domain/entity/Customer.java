@@ -1,3 +1,4 @@
+
 package com.djnd.cinema_java_spring.domain.entity;
 
 import java.time.LocalDate;

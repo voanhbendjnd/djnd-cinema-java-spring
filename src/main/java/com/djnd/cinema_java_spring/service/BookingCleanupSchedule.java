@@ -32,7 +32,7 @@ public class BookingCleanupSchedule {
     @Scheduled(fixedRate = 60000) // 60s
     @Transactional
     public void cleanupExpiredBookings() {
-        Instant threshold = Instant.now().plus(10, ChronoUnit.MINUTES);
+        Instant threshold = Instant.now().minus(10, ChronoUnit.MINUTES);
         List<BookingSeatProjection> expiredItems = bookingDetailRepository
                 .findExpiredBookingSeats(BookingStatus.PENDING, threshold);
         if (expiredItems != null && !expiredItems.isEmpty()) {

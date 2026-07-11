@@ -1,6 +1,7 @@
 package com.djnd.cinema_java_spring.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.djnd.cinema_java_spring.domain.entity.*;
+import com.djnd.cinema_java_spring.repository.*;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,22 +19,9 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.djnd.cinema_java_spring.domain.entity.Booking;
-import com.djnd.cinema_java_spring.domain.entity.BookingDetail;
-import com.djnd.cinema_java_spring.domain.entity.Customer;
-import com.djnd.cinema_java_spring.domain.entity.PaymentHistory;
-import com.djnd.cinema_java_spring.domain.entity.Seat;
-import com.djnd.cinema_java_spring.domain.entity.Showtime;
-import com.djnd.cinema_java_spring.domain.entity.User;
 import com.djnd.cinema_java_spring.domain.enumeration.BookingStatus;
 import com.djnd.cinema_java_spring.domain.enumeration.PaymentMethod;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
-import com.djnd.cinema_java_spring.repository.BookingDetailRepository;
-import com.djnd.cinema_java_spring.repository.BookingRepository;
-import com.djnd.cinema_java_spring.repository.CustomerRepository;
-import com.djnd.cinema_java_spring.repository.PaymentHistoryRepository;
-import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
-import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.dto.BookingRequestDTO;
@@ -67,12 +57,16 @@ public class BookingService {
     final SeatService seatService;
     final ShowtimePriceService showtimePriceService;
     final TicketService ticketService;
+    final CustomerVoucherRepository customerVoucherRepository;
     final VNPayService vnPayService;
     final StringRedisTemplate redisTemplate;
     final BookingDetailRepository bookingDetailRepository;
     final UserRepository userRepository;
+    final PromotionRepository promotionRepository;
     final BookingDetailService bookingDetailService;
     // final TicketEventProducer ticketEventProducer;
+    final BookingVoucherService bookingVoucherService;
+    CustomerVoucherService customerVoucherService;
     final PaymentHistoryRepository paymentHistoryRepository;
     private static final String EXPIRE_TIME_HOLDING_SEATS = "600"; // 10 minutes
     static final String LUA_HOLD_SEATS_AT_SHOWTIME = "local showtimeKey = KEYS[1] " +
@@ -108,7 +102,7 @@ public class BookingService {
         }
 
         // start holding seat and check exist seat at redis
-        String showtimeRedisKey = this.getShowtimeKeyOrholdingSeatAndCheckAtRedis(request.getShowtimeId(),
+        String showtimeRedisKey = this.getShowtimeKeyOrHoldingSeatAndCheckAtRedis(request.getShowtimeId(),
                 request.getSeatIds());
         // end holding seat and check exist seat at redis
 
@@ -219,7 +213,7 @@ public class BookingService {
         }
     }
 
-    public String getShowtimeKeyOrholdingSeatAndCheckAtRedis(Long showtimeId, List<Integer> seatIds) {
+    public String getShowtimeKeyOrHoldingSeatAndCheckAtRedis(Long showtimeId, List<Integer> seatIds) {
         String showtimeRedisKey = "showtime:" + showtimeId + ":seats";
         List<String> argsRedis = new ArrayList<>();
         argsRedis.add(EXPIRE_TIME_HOLDING_SEATS);
@@ -244,7 +238,7 @@ public class BookingService {
         Customer customer = customerRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Not found customer!"));
         // start holding seat and check exist seat at redis
-        String showtimeRedisKey = this.getShowtimeKeyOrholdingSeatAndCheckAtRedis(request.getShowtimeId(),
+        String showtimeRedisKey = this.getShowtimeKeyOrHoldingSeatAndCheckAtRedis(request.getShowtimeId(),
                 request.getSeatIds());
         // end holding seat and check exist seat at redis
 
@@ -258,7 +252,7 @@ public class BookingService {
         }
         // end check seat exist db, if exist remove seat in redis
 
-        List<Integer> seatIdsAvaliables = seats.stream().map(Seat::getId).toList();
+        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
         // start check showtime booking must be before current
         Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
@@ -270,7 +264,7 @@ public class BookingService {
         }
         // end check showtime booking must be before current
         // start check seat with ticket sold
-        ticketService.checkTicketWithSeatSold(request.getShowtimeId(), seatIdsAvaliables, errorMessages);
+        ticketService.checkTicketWithSeatSold(request.getShowtimeId(), seatIdsAvailable, errorMessages);
         if (!errorMessages.isEmpty()) {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
 
@@ -309,20 +303,32 @@ public class BookingService {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
-        booking.setTotalAmount(totalAmount);
+        BigDecimal finalTotalAmount = totalAmount;
+        if (request.getVoucherId() != null) {
+            Double discountPercent = customerVoucherService.getDiscountWithVoucherIdByCustomer(request.getVoucherId(),
+                    userId);
+            BigDecimal priceDiscount = totalAmount.multiply(new BigDecimal(String.valueOf(discountPercent)))
+                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+
+            finalTotalAmount = totalAmount.subtract(priceDiscount).max(BigDecimal.ZERO);
+            bookingVoucherService.saveBookingVoucher(booking,
+                    promotionRepository.getReferenceById(request.getVoucherId()), discountPercent, priceDiscount,
+                    finalTotalAmount);
+        }
+        booking.setTotalAmount(finalTotalAmount);
         booking.setBookingDetails(bookingDetails);
 
         try {
             BookingStatus pending = BookingStatus.PENDING;
             booking.setStatus(pending);
             booking = bookingRepository.save(booking);
-            // already config cascade below code unnessecsary
-            // ticketRepository.saveAll(saveTickets);
-            // start save payment history with status pending
             paymentHistoryService.createHistoryWithStatus(booking, pending);
+            if (request.getVoucherId() != null) {
+                customerVoucherRepository.markVoucherAlreadyUsed(userId, request.getVoucherId());
+            }
             // end save payment history
             bookingRepository.flush();
-            String paymentUrl = vnPayService.createPaymentUrl(booking.getId(), totalAmount);
+            String paymentUrl = vnPayService.createPaymentUrl(booking.getId(), finalTotalAmount);
 
             ResBookingDTO res = new ResBookingDTO();
             res.setBookingId(booking.getId());
@@ -350,8 +356,7 @@ public class BookingService {
     }
 
     public Booking generateBookingForNotMember(String paymentMethod) {
-        Booking newBooking = this.generateBooking(paymentMethod);
-        return newBooking;
+        return this.generateBooking(paymentMethod);
     }
 
     public Booking generateBooking(String paymentMethod) {
