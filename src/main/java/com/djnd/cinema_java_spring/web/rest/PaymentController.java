@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,8 @@ public class PaymentController {
     @GetMapping("/vnpay-return")
     @ApiMessage("Vnpay return server")
     public ResponseEntity<Map<String, String>> handleVNPayReturn(@RequestParam Map<String, String> params) {
+        System.out.println("========== CALLBACK ==========");
+        System.out.println(LocalDateTime.now());
         Map<String, String> res = bookingService.processVNPayCallback(params);
         return ResponseEntity.ok(res);
     }

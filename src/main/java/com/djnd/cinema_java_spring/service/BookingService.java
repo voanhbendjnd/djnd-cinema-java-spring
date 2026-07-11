@@ -374,7 +374,12 @@ public class BookingService {
         String responseCode = params.get("vnp_ResponseCode");
         Booking booking = bookingRepository.findForUpdateDetailByIdWithVersion(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
-        Long showtimeId = booking.getBookingDetails().get(0).getShowtime().getId();
+        if(booking.getStatus() == BookingStatus.FAILED) {
+            response.put("RspCode", "00");
+            response.put("Message", "Confirm Success");
+            return response;
+        }
+        Long showtimeId = booking.getBookingDetails().getFirst().getShowtime().getId();
         String showtimeRedisKey = "showtime:" + showtimeId + ":seats";
         List<Integer> seatIds = booking.getBookingDetails().stream().map(detail -> detail.getSeat().getId())
                 .toList();

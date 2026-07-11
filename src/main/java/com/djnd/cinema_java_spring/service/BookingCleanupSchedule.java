@@ -36,7 +36,7 @@ public class BookingCleanupSchedule {
         List<BookingSeatProjection> expiredItems = bookingDetailRepository
                 .findExpiredBookingSeats(BookingStatus.PENDING, threshold);
         if (expiredItems != null && !expiredItems.isEmpty()) {
-            List<Long> bookingIds = expiredItems.stream().map(x -> x.bookingId()).toList();
+            List<Long> bookingIds = expiredItems.stream().map(BookingSeatProjection::bookingId).toList();
             bookingRepository.updateStatusByIdIn(BookingStatus.CANCELLED, bookingIds);
             bookingDetailRepository.deleteByBookingIdIn(bookingIds);
 
