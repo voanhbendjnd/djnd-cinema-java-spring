@@ -24,7 +24,7 @@ public interface CustomerVoucherRepository extends JpaRepository<CustomerVoucher
 
         @Query(value = """
                             select v from CustomerVoucher cv join cv.voucher v where cv.customer.userId = :customerId and v.isActive = true
-                                       and v.startTime >= :current and cv.isUsed = false
+                                       and v.endTime > :current and cv.isUsed = false
                             and (:cursor is null or v.startTime < :cursor or (v.startTime = :cursor and v.id < :voucherId))
                             order by v.startTime desc, v.id desc
                         """)
@@ -40,6 +40,6 @@ public interface CustomerVoucherRepository extends JpaRepository<CustomerVoucher
                         @Param("voucherId") Long voucherId);
 
         @Modifying
-        @Query(value = "update CustomerVoucher cv set cv.isUsed = true where cv.customer.userId = :customerId and cv.voucher.id = :voucherid")
+        @Query(value = "update CustomerVoucher cv set cv.isUsed = true where cv.customer.userId = :customerId and cv.voucher.id = :voucherId")
         void markVoucherAlreadyUsed(@Param("customerId") Long customerId, @Param("voucherId") Long voucherId);
 }

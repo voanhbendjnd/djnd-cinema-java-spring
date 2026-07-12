@@ -164,7 +164,7 @@ public class ShowtimeService {
             TimeBlock next = allBlocks.get(i + 1);
             if (next.start().isBefore(current.end())) {
                 errorMessages.add(String.format(
-                        "Schedule conflict at date [%s]: Showtime [%s] (ending at %s) overlaps with the next showtime [%s]",
+                        "Schedule conflict at date [%s]: Showtime [%s] (ending at %s) overlaps with the next showtime [%s], duration showtime occupy next showtime, please select other showtime!",
                         date, current.start(), current.end(), next.start()));
             }
         }

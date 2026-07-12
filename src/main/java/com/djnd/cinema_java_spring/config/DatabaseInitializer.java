@@ -166,25 +166,7 @@ public class DatabaseInitializer implements CommandLineRunner {
                                                         PermissionMethod.POST,
                                                         "MOVIES"));
                         //
-                        permissionList.add(
-                                        new Permission("CREATE_ROLE", Constants.VERSION_API + "/admin/roles",
-                                                        PermissionMethod.POST,
-                                                        "ROLES"));
-                        permissionList.add(
-                                        new Permission("UPDATE_ROLE", Constants.VERSION_API + "/admin/roles",
-                                                        PermissionMethod.PUT,
-                                                        "ROLES"));
-                        permissionList.add(
-                                        new Permission("DELETE_ROLE", Constants.VERSION_API + "/admin/roles/{id}",
-                                                        PermissionMethod.DELETE, "ROLES"));
-                        permissionList.add(
-                                        new Permission("GET_ROLE", Constants.VERSION_API + "/admin/roles/{id}",
-                                                        PermissionMethod.GET,
-                                                        "ROLES"));
-                        permissionList.add(
-                                        new Permission("GET_ALL_ROLE", Constants.VERSION_API + "/admin/roles",
-                                                        PermissionMethod.GET,
-                                                        "ROLES"));
+
                         // customer list
                         permissionList.add(new Permission("GET_ALL_CUSTOMER",
                                         Constants.VERSION_API + "/api/admin/users/customer", PermissionMethod.GET,

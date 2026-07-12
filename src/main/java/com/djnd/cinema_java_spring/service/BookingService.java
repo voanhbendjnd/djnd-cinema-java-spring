@@ -66,7 +66,7 @@ public class BookingService {
     final BookingDetailService bookingDetailService;
     // final TicketEventProducer ticketEventProducer;
     final BookingVoucherService bookingVoucherService;
-    CustomerVoucherService customerVoucherService;
+    final CustomerVoucherService customerVoucherService;
     final PaymentHistoryRepository paymentHistoryRepository;
     private static final String EXPIRE_TIME_HOLDING_SEATS = "600"; // 10 minutes
     static final String LUA_HOLD_SEATS_AT_SHOWTIME = "local showtimeKey = KEYS[1] " +
@@ -304,6 +304,7 @@ public class BookingService {
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
         BigDecimal finalTotalAmount = totalAmount;
+        BookingVoucher bookingVoucher = null;
         if (request.getVoucherId() != null) {
             Double discountPercent = customerVoucherService.getDiscountWithVoucherIdByCustomer(request.getVoucherId(),
                     userId);
@@ -311,12 +312,13 @@ public class BookingService {
                     .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
 
             finalTotalAmount = totalAmount.subtract(priceDiscount).max(BigDecimal.ZERO);
-            bookingVoucherService.saveBookingVoucher(booking,
+            bookingVoucher = bookingVoucherService.generateBookingVoucher(booking,
                     promotionRepository.getReferenceById(request.getVoucherId()), discountPercent, priceDiscount,
                     finalTotalAmount);
         }
         booking.setTotalAmount(finalTotalAmount);
         booking.setBookingDetails(bookingDetails);
+        booking.setBookingVoucher(bookingVoucher);
 
         try {
             BookingStatus pending = BookingStatus.PENDING;
@@ -374,7 +376,7 @@ public class BookingService {
         String responseCode = params.get("vnp_ResponseCode");
         Booking booking = bookingRepository.findForUpdateDetailByIdWithVersion(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
-        if(booking.getStatus() == BookingStatus.FAILED) {
+        if (booking.getStatus() == BookingStatus.FAILED) {
             response.put("RspCode", "00");
             response.put("Message", "Confirm Success");
             return response;

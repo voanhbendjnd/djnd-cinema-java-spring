@@ -2,6 +2,7 @@ package com.djnd.cinema_java_spring.service;
 
 import java.time.LocalDateTime;
 
+import jakarta.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -96,6 +97,13 @@ public class PromotionService {
             throw new RequestInvalidException("Quantity voucher must be greater than zero!");
         }
 
+        Promotion promotion = getPromotion(dto);
+
+        return toDTO(promotionRepository.save(promotion));
+    }
+
+    @Nonnull
+    private static Promotion getPromotion(PromotionDTO dto) {
         Promotion promotion = new Promotion();
         promotion.setTitle(dto.getTitle());
         promotion.setQuantity(dto.getQuantity());
@@ -106,8 +114,7 @@ public class PromotionService {
         promotion.setStartTime(dto.getStartTime());
         promotion.setEndTime(dto.getEndTime());
         promotion.setThumbnailUrl(dto.getThumbnailUrl());
-
-        return toDTO(promotionRepository.save(promotion));
+        return promotion;
     }
 
     // -------------------------------------------------------

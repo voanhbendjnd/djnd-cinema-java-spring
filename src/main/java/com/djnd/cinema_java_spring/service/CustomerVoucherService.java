@@ -127,7 +127,7 @@ public class CustomerVoucherService {
         return res;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public ResultPaginationVoucherCursor getVoucherAvailableByCustomerAlreadyClaim(int size, LocalDateTime cursor,
             Long voucherId) {
         Long userId = SecurityUtils.getCurrentUserIdOrNull();

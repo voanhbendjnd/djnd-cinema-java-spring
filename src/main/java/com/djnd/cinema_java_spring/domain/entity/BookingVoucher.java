@@ -21,11 +21,9 @@ public class BookingVoucher extends AbstractAuditingEntity<Long> implements Seri
         Long id;
         @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "booking_id")
-        @MapsId
         Booking booking;
         @OneToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "voucher_id")
-        @MapsId
         Promotion voucher;
         Double discountPercentage;
         BigDecimal finalAmount;
