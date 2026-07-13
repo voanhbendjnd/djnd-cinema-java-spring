@@ -40,4 +40,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     @EntityGraph(attributePaths = { "showtime", "showtime.movie", "seat", "showtime.room" })
     @Query(value = "select t from Ticket t where t.booking.id = :bookingId")
     List<Ticket> getTicketsByBookingId(@Param("bookingId") Long bookingId);
+    @EntityGraph(attributePaths = {"showtime","booking", "booking.customer"})
+    @Query(value = "select t from Ticket t where t.id = :ticketId")
+    Optional<Ticket> getTicketDetailBookingWithId(@Param("ticketId") Long ticketId);
+    @Query(value = "select exists(select 1 from Ticket t where t.id = :ticketId and t.booking.customer.id = :customerId)")
+    boolean existTicketByTicketIdAndCustomerId(@Param ("ticketId")Long ticketId,@Param("customerId") Long customerId);
 }

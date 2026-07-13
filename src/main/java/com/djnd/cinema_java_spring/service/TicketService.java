@@ -176,4 +176,9 @@ public class TicketService {
         throw new RequestInvalidException("Booking not found!");
     }
 
+
+    public void deleteTicketForCustomerChangeTicketToPoint(Long ticketId){
+        this.ticketRepository.deleteById(ticketId);
+    }
+
 }

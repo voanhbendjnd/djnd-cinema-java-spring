@@ -1,14 +1,10 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.djnd.cinema_java_spring.domain.enumeration.PaymentMethod;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
@@ -63,6 +59,13 @@ public class BookingController {
             + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<UserDTO> getCustomerByEmail(@RequestParam("email") String email) {
         return ResponseEntity.ok(bookingService.getCustomerByEmail(email));
+    }
+    @PostMapping("/ticket/{id}/exchange-to-points")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+    @ApiMessage("Cancel exchanged ticket by customer")
+    public ResponseEntity<Void> cancelExchangedTicket(@Positive @PathVariable("id") Long ticketId){
+        bookingService.exchangeTicketToPoints(ticketId);
+        return ResponseEntity.ok(null);
     }
 
 }

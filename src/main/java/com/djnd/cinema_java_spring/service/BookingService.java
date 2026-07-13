@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.djnd.cinema_java_spring.domain.entity.*;
+import com.djnd.cinema_java_spring.domain.enumeration.BookingDetailStatus;
 import com.djnd.cinema_java_spring.repository.*;
+import com.djnd.cinema_java_spring.web.rest.errors.*;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,11 +35,6 @@ import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
 import com.djnd.cinema_java_spring.service.dto.UserDTO;
 // import com.djnd.cinema_java_spring.service.producer.TicketEventProducer;
 import com.djnd.cinema_java_spring.service.projection.PublishCustomerBookingProjection;
-import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
-import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
-import com.djnd.cinema_java_spring.web.rest.errors.SeatOccupiedException;
-import com.djnd.cinema_java_spring.web.rest.errors.UnauthorizedException;
-import com.djnd.cinema_java_spring.web.rest.errors.UserAccessDeniedException;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -64,10 +61,12 @@ public class BookingService {
     final UserRepository userRepository;
     final PromotionRepository promotionRepository;
     final BookingDetailService bookingDetailService;
+    final TicketRepository ticketRepository;
     // final TicketEventProducer ticketEventProducer;
     final BookingVoucherService bookingVoucherService;
     final CustomerVoucherService customerVoucherService;
     final PaymentHistoryRepository paymentHistoryRepository;
+    final LoyaltyWalletService loyaltyWalletService;
     private static final String EXPIRE_TIME_HOLDING_SEATS = "600"; // 10 minutes
     static final String LUA_HOLD_SEATS_AT_SHOWTIME = "local showtimeKey = KEYS[1] " +
             "local expireTime = tonumber(ARGV[1]) " +
@@ -303,6 +302,8 @@ public class BookingService {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
+        // check showtime seat and status lock
+        bookingDetailService.checkAlreadyShowtimeSeatWithStatusLock(bookingDetails);
         BigDecimal finalTotalAmount = totalAmount;
         BookingVoucher bookingVoucher = null;
         if (request.getVoucherId() != null) {
@@ -418,6 +419,14 @@ public class BookingService {
             // .build();
             // ticketEventProducer.sendTicketMailEvent(event);
 
+
+            // add loyalties
+            Customer customerByBooking = booking.getCustomer();
+            if(customerByBooking != null){
+                loyaltyWalletService.handleEarnPointCustomer(customerByBooking, vnpTotalAmount.intValue());
+            }
+
+
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIds);
             response.put("RspCode", "00");
             response.put("Message", "Confirm Success");
@@ -495,5 +504,62 @@ public class BookingService {
     public PublishCustomerBookingProjection getPublishBookingDetail(Long bookingId) {
         return bookingRepository.getPublishCustomerBookingDetailById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
+    }
+    public void exchangeTicketToPoints(Long ticketId){
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if(userId == null){
+            throw new UnauthorizedException("You are not logged in!");
+        }
+        if(!ticketRepository.existTicketByTicketIdAndCustomerId(ticketId, userId)){
+            throw new RequestInvalidException("Customer with ticket ID: " + ticketId + " is not exist!");
+        }
+        Ticket ticket = ticketRepository.getTicketDetailBookingWithId(ticketId).orElseThrow(()-> new ResourceNotFoundException("Ticket not found!"));
+        Showtime showtimeByTicket = ticket.getShowtime();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTimeMovieShow = showtimeByTicket.getStartDateTime();
+        if(startTimeMovieShow.isAfter(now)){
+            throw new OperationCannotPerformedException("You cannot change ticket to loyalty point if start showing movie is after current time!");
+        }
+        Booking booking = ticket.getBooking();
+
+        Customer customerByTicket = booking.getCustomer();
+        if(customerByTicket == null){
+            throw new ResourceNotFoundException("Customer not found!");
+        }
+        // delete ticket
+        ticketService.deleteTicketForCustomerChangeTicketToPoint(ticketId);
+        // change status booking detail
+        List<BookingDetail> bookingDetails = booking.getBookingDetails();
+        if(bookingDetails == null || bookingDetails.isEmpty()){
+            throw new UserAccessDeniedException("Booking detail by ticket not found!");
+        }
+        bookingDetailService.changeDetailFromLockToUnlock(bookingDetails);
+        Integer pointValueAfterCalculateWithTime = this.calculatorPointWithTimeOnThenDeviation(now, startTimeMovieShow, ticket.getPrice());
+        loyaltyWalletService.handleEarnPointCustomer(customerByTicket,pointValueAfterCalculateWithTime);
+
+    }
+
+    private Integer calculatorPointWithTimeOnThenDeviation(LocalDateTime now,LocalDateTime startTimeMovieShow, BigDecimal priceByTicket) {
+        if(now.plusDays(7).isBefore(startTimeMovieShow)){
+            return (priceByTicket.intValue() * 80) / 100;
+        }
+        else if(now.plusDays(5).isBefore(startTimeMovieShow)){
+            return (priceByTicket.intValue() * 70) / 100;
+
+        }
+        else if(now.plusDays(3).isBefore(startTimeMovieShow)){
+            return (priceByTicket.intValue() * 60) / 100;
+
+        }
+        else if(now.plusDays(2).isBefore(startTimeMovieShow)){
+            return (priceByTicket.intValue() * 50) / 100;
+
+        }
+        else if(now.plusDays(1).isBefore(startTimeMovieShow)){
+            return (priceByTicket.intValue() * 40) / 100;
+        }
+        else{
+            throw new RequestInvalidException("Cannot change ticket to loyalty point with current!");
+        }
     }
 }

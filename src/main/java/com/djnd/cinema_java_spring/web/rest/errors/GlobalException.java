@@ -136,4 +136,14 @@ public class GlobalException {
         return ResponseEntity.status(statusCode).body(res);
     }
 
+    @ExceptionHandler(value = { OperationCannotPerformedException.class })
+    public ResponseEntity<RestResponse<?>> handleBadRequestException(OperationCannotPerformedException ex) {
+        int statusCode = HttpStatus.BAD_REQUEST.value();
+        var res = new RestResponse<>();
+        res.setStatusCode(statusCode);
+        res.setError("Bad request!");
+        res.setMessage(ex.getMessage());
+        return ResponseEntity.status(statusCode).body(res);
+    }
+
 }

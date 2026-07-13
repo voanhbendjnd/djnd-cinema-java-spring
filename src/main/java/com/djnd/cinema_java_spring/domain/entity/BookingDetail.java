@@ -23,7 +23,7 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @Getter
 @Setter
-@Table(name = "booking_detail", uniqueConstraints = @UniqueConstraint(columnNames = { "seat_id", "showtime_id" }))
+@Table(name = "booking_detail", uniqueConstraints = @UniqueConstraint(columnNames = { "seat_id", "showtime_id", "booking_id" }))
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BookingDetail implements Serializable {
     @Serial
@@ -47,5 +47,6 @@ public class BookingDetail implements Serializable {
     @NotNull
     @Column(name = "price", nullable = false)
     BigDecimal price;
+    String status;
 
 }

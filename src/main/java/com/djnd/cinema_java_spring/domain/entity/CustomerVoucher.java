@@ -29,6 +29,6 @@ public class CustomerVoucher extends AbstractAuditingEntity<Long> implements Ser
     @JoinColumn(name = "voucher_id")
     Promotion voucher;
     @NotNull
-            @Column(name = "is_used", nullable = false)
+    @Column(name = "is_used", nullable = false)
     boolean isUsed = false;
 }

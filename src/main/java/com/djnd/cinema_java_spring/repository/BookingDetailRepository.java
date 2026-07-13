@@ -28,4 +28,6 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, Lo
         List<BookingSeatProjection> findExpiredBookingSeats(
                         @Param("status") BookingStatus status,
                         @Param("threshold") Instant threshold);
+        @Query(value = "select bd from BookingDetail bd where bd.showtime.id = :showtimeId and bd.seat.id = :seatId and bd.status = :status")
+        List<BookingDetail> getBookingDetailWithShowtimeIdAndSeatIdAndStatus(@Param("showtimeId") Long showtimeId,@Param("seatId") Integer seatId, @Param("status") String status);
 }

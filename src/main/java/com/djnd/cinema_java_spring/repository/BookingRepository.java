@@ -1,6 +1,5 @@
 package com.djnd.cinema_java_spring.repository;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,12 +31,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // @Lock(LockModeType.PESSIMISTIC_FORCE_INCREMENT)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @EntityGraph(attributePaths = { "bookingDetails", "bookingDetails.seat", "bookingDetails.showtime" })
-    @Query(value = "select b from Booking b where b.id = :bookingId")
+    @Query(value = "select b from Booking b left join fetch b.customer c where b.id = :bookingId")
     Optional<Booking> findForUpdateDetailByIdWithVersion(@Param("bookingId") Long bookingId);
 
     @Modifying
     @Query(value = "update Booking b set b.status = :status where b.id in :bookingIds")
-    int updateStatusByIdIn(@Param("status") BookingStatus status, @Param("bookingIds") List<Long> ids);
+    void updateStatusByIdIn(@Param("status") BookingStatus status, @Param("bookingIds") List<Long> ids);
 
     @Query(value = "select b from Booking b left join b.customer c left join c.user u where b.bookingCode like concat('%', :q, '%') or u.phone like concat('%', :q, '%') or c.identityCard like concat('%', :q, '%')", countQuery = "select count(b) from Booking b join b.customer c join c.user u where b.bookingCode like concat('%', :q, '%') or u.phone like concat('%', :q, '%') or c.identityCard like concat('%', :q, '%')")
     Page<Booking> fetchAllWithPagination(@Param("q") String q, Pageable pageable);
