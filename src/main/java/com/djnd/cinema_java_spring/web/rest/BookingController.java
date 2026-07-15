@@ -68,4 +68,12 @@ public class BookingController {
         return ResponseEntity.ok(null);
     }
 
+    @PostMapping("/exchange-to-ticket")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+    @ApiMessage("Cancel exchanged ticket by customer")
+    public ResponseEntity<ResBookingDTO> usePointExchangeToTicket(@Valid @RequestBody BookingRequestDTO request){
+        validRequestBooking(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.getTicketWithPoint(request));
+    }
+
 }
