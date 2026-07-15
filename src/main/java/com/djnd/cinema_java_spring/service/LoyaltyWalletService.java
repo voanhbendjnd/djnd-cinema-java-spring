@@ -16,9 +16,10 @@ import org.springframework.stereotype.Service;
 public class LoyaltyWalletService {
     final CustomerRepository customerRepository;
     final PointHistoryRepository pointHistoryRepository;
+    final CustomerService customerService;
     public void handleEarnPointCustomer(Customer customer, Integer baseAmount) {
         if(customer != null){
-            Integer amountPoints = baseAmount % 100;
+            Integer amountPoints = baseAmount / 100;
             customer.setLoyaltyPoints(customer.getLoyaltyPoints() + amountPoints);
             customerRepository.save(customer);
             PointHistory saveEarnPointHistory = PointHistory.builder()
@@ -28,6 +29,7 @@ public class LoyaltyWalletService {
                     .description("Customer payment successfully complete and receive reward points to wallet")
                     .build();
             pointHistoryRepository.save(saveEarnPointHistory);
+            customerService.clearCacheCustomer(customer.getUserId());
         }
     }
 

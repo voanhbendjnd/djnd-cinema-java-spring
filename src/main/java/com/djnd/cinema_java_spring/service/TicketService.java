@@ -72,6 +72,7 @@ public class TicketService {
                     .seatType(seat.getType())
                     .roomName(showtime.getRoom().getName())
                     .seatPosition(seatPosition)
+                    .price(ticket.getPrice())
                     .build();
         }).toList());
 

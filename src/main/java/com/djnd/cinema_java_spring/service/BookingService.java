@@ -517,7 +517,7 @@ public class BookingService {
         Showtime showtimeByTicket = ticket.getShowtime();
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTimeMovieShow = showtimeByTicket.getStartDateTime();
-        if(startTimeMovieShow.isAfter(now)){
+        if(now.isAfter(startTimeMovieShow)){
             throw new OperationCannotPerformedException("You cannot change ticket to loyalty point if start showing movie is after current time!");
         }
         Booking booking = ticket.getBooking();
