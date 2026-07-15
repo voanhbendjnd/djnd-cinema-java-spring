@@ -71,9 +71,9 @@ public class SeatService {
 
     public List<Seat> getSeatAvailable(List<Integer> seatIds, List<String> errorMessages) {
         List<Seat> seats = seatRepository.findByIdIn(seatIds);
-        List<Integer> seatIdsAvaliables = seats.stream().map(Seat::getId).toList();
+        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
         for (Integer seatId : seatIds) {
-            if (!seatIdsAvaliables.contains(seatId)) {
+            if (!seatIdsAvailable.contains(seatId)) {
                 errorMessages.add("Seat with ID " + seatId + " not found!");
             }
         }

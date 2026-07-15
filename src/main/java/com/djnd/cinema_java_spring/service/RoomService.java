@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.djnd.cinema_java_spring.domain.enumeration.SeatStatus;
+import com.djnd.cinema_java_spring.web.rest.errors.OperationCannotPerformedException;
+import jdk.jshell.Snippet;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,6 +56,9 @@ public class RoomService {
     public RoomDetailDTO updateRoom(RoomDetailDTO roomDetailDTO) {
         Room room = roomRepository.findWithDetail(roomDetailDTO.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found!"));
+        if(showtimeRepository.existByRoomId(room.getId())){
+            throw new OperationCannotPerformedException("Cannot change seat type with room already have been showtime!");
+        }
         room.setName(roomDetailDTO.getName());
         room.setStatus(RoomStatus.valueOf(roomDetailDTO.getStatus()));
         room.setType(RoomType.valueOf(roomDetailDTO.getType()));
@@ -76,15 +82,22 @@ public class RoomService {
         Map<String, SeatType> seatTypeMap = roomDetailDTO.getSeats().stream()
                 .collect(Collectors.toMap(seat -> seat.getSeatRow() + '-' + seat.getSeatNo(),
                         seat -> SeatType.valueOf(seat.getType())));
+        // position seat - status seat
+        Map<String, SeatStatus> seatStatusMap = roomDetailDTO.getSeats().stream().collect(Collectors.toMap(seat -> seat.getSeatRow() + '-' + seat.getSeatNo(),seat -> SeatStatus.valueOf(seat.getStatus())));
         for (char row = 'A'; row < 'A' + roomDetailDTO.getTotalRows(); row++) {
             String rowStr = String.valueOf(row);
             for (int no = 1; no <= roomDetailDTO.getTotalCols(); no++) {
                 Seat seat = new Seat();
                 seat.setSeatRow(rowStr);
                 seat.setSeatNo(no);
+
                 seat.setRoom(room);
                 String coordinateKey = rowStr + "-" + no;
                 SeatType dynamicType = seatTypeMap.get(coordinateKey);
+                SeatStatus dynamicStatus = seatStatusMap.get(coordinateKey);
+                if(dynamicStatus!= null){
+                    seat.setStatus(dynamicStatus);
+                }
                 if (dynamicType != null) {
                     seat.setType(dynamicType);
                 } else {

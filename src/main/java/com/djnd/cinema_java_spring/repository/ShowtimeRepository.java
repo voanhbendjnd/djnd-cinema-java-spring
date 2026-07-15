@@ -54,4 +54,7 @@ public interface ShowtimeRepository extends JpaRepository<Showtime, Long> {
         @EntityGraph(attributePaths = { "movie" })
         @Query(value = "select s from Showtime s where s.id = :showtimeId")
         Optional<Showtime> findWithDetailMovieById(@Param("showtimeId") Long showtimeId);
+
+        @Query(value = "select exists(select 1 from Showtime s where s.room.id = :roomId)")
+        boolean existByRoomId(@Param("roomId") Integer roomId);
 }
