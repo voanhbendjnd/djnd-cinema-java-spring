@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,4 +46,14 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     Optional<Ticket> getTicketDetailBookingWithId(@Param("ticketId") Long ticketId);
     @Query(value = "select exists(select 1 from Ticket t where t.id = :ticketId and t.booking.customer.id = :customerId)")
     boolean existTicketByTicketIdAndCustomerId(@Param ("ticketId")Long ticketId,@Param("customerId") Long customerId);
+    @EntityGraph(attributePaths = {"booking.customer.user", "showtime", "showtime.movie"})
+    @Query(value = """
+    select t from Ticket t
+    where t.seat.id = :seatId
+    and t.showtime.startDateTime between :startTimeMaintenance and :endTimeMaintenance
+""")
+    List<Ticket> getAllTicketCustomerAlreadyHasWithSeatMaintenanceAndTimeIn(@Param("seatId") Integer seatId, @Param("startTimeMaintenance") LocalDateTime startTimeMaintenance, @Param("endTimeMaintenance")LocalDateTime endTimeMaintenance);
+}
+
+
 }

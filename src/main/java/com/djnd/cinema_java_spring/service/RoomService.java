@@ -168,6 +168,7 @@ public class RoomService {
                         .id(x.getId())
                         .seatNo(x.getSeatNo())
                         .seatRow(x.getSeatRow())
+                        .status(x.getStatus().toString())
                         .type(x.getType().toString())
                         .build();
             }).toList();

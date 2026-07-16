@@ -1,6 +1,7 @@
 package com.djnd.cinema_java_spring.service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Locale;
 
 import org.slf4j.Logger;
@@ -40,7 +41,7 @@ public class MailService {
         sendEmailSync(to, subject, content, isMultipart, isHtml);
     }
 
-    private void sendEmailSync(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
+    public void sendEmailSync(String to, String subject, String content, boolean isMultipart, boolean isHtml) {
         LOG.debug(
                 "Send email[multipart '{}' and html '{}'] to '{}' with subject '{}' and content={}",
                 isMultipart,
@@ -80,6 +81,7 @@ public class MailService {
         String subject = messageSource.getMessage(titleKey, null, locale);
         sendEmailSync(user.getEmail(), subject, content, false, true);
     }
+
 
     @Async
     public void sendActivationEmail(AdminUserDTO user) {

@@ -1,5 +1,7 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -43,4 +45,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     @Query(value = "select exists(select 1 from Customer c where c.id = :customerId)")
     boolean existByCustomerId(@Param("customerId") Long customerId);
+
 }

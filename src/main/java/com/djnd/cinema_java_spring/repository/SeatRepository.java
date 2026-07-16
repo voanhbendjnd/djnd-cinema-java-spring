@@ -26,4 +26,6 @@ public interface SeatRepository extends JpaRepository<Seat, Integer> {
     List<SeatLayoutDTO> getSeatLayoutByShowtime(@Param("showtimeId") Long showtimeId);
 
     List<Seat> findByIdIn(List<Integer> seatIds);
+    @Query(value = "select exists(select 1 from Seat s where s.id = :seatId)")
+    boolean existById(@Param("seatId") Integer seatId);
 }

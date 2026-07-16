@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.djnd.cinema_java_spring.domain.enumeration.SeatStatus;
+import com.djnd.cinema_java_spring.web.rest.errors.OperationCannotPerformedException;
+import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import org.springframework.stereotype.Service;
 
 import com.djnd.cinema_java_spring.domain.entity.Seat;
@@ -62,7 +65,7 @@ public class SeatService {
             }
         }
         long totalSoldSeats = seats.stream().filter(seat -> seat.bookingStatus().equalsIgnoreCase("SOLD"))
-                .mapToInt(s -> s.id()).count();
+                .mapToInt(SeatLayoutDTO::id).count();
         res.setSeats(resSeats);
         res.setTotalSeats(resSeats.size());
         res.setTotalSoldSeats(Math.toIntExact(totalSoldSeats));
@@ -78,5 +81,16 @@ public class SeatService {
             }
         }
         return seats;
+    }
+
+
+    public String createSeatMaintenance(Integer seatId){
+        Seat currentSeat = seatRepository.findById(seatId).orElseThrow(()-> new ResourceNotFoundException("Seat not found!"));
+        if(currentSeat.getStatus() == SeatStatus.MAINTENANCE){
+            throw new OperationCannotPerformedException("Seat is already maintenance!");
+        }
+        currentSeat.setStatus(SeatStatus.MAINTENANCE);
+        seatRepository.save(currentSeat);
+        return currentSeat.getSeatRow()  + currentSeat.getSeatNo();
     }
 }
