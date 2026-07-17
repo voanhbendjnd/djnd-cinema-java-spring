@@ -54,6 +54,7 @@ public class RoomResource {
 
     @DeleteMapping("/{id}")
     @ApiMessage("Delete room by ID")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '" + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<Void> deleteRoom(@Positive @PathVariable("id") Integer roomId) {
         roomService.deleteRoom(roomId);
         return ResponseEntity.ok(null);

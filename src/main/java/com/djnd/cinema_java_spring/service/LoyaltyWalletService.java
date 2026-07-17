@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
@@ -34,6 +36,7 @@ public class LoyaltyWalletService {
             customerService.clearCacheCustomer(customer.getUserId());
         }
     }
+
     public void handleSpendPointCustomer(Customer customer, Integer baseAmount) {
         if(customer != null){
             Integer amountPoints = baseAmount / 100;

@@ -33,7 +33,12 @@ public class BookingDetailService {
         detail.setStatus(BookingDetailStatus.LOCK.toString());
         return detail;
     }
-
+    /*
+    * Check booking detail for customer booking use ticket change to point
+    * ticket booking detail will unlock if ticket change to point success
+    * and other people can create booking again with seat and showtime with it
+    * target method change detail from lock to unlock
+    * */
     public void changeDetailFromLockToUnlock(List<BookingDetail> bookingDetails){
 
         bookingDetails.forEach(bookingDetail -> {
@@ -46,10 +51,10 @@ public class BookingDetailService {
     public void checkAlreadyShowtimeSeatWithStatusLock(List<BookingDetail> bookingDetails){
         Long showtimeId = bookingDetails.getFirst().getShowtime().getId();
         Integer seatId = bookingDetails.getFirst().getSeat().getId();
-        var existingBookingDetailsWithStatusLock = bookingDetailRepository.getBookingDetailWithShowtimeIdAndSeatIdAndStatus(showtimeId, seatId, BookingDetailStatus.LOCK.toString());
-        if(existingBookingDetailsWithStatusLock != null && !existingBookingDetailsWithStatusLock.isEmpty()){
+        var bookingDetailsWithStatusLockExisting = bookingDetailRepository.getBookingDetailWithShowtimeIdAndSeatIdAndStatus(showtimeId, seatId, BookingDetailStatus.LOCK.toString());
+        if(bookingDetailsWithStatusLockExisting != null && !bookingDetailsWithStatusLockExisting.isEmpty()){
             List<String> errorMessages = new ArrayList<>();
-            for(BookingDetail bookingDetail : existingBookingDetailsWithStatusLock){
+            for(BookingDetail bookingDetail : bookingDetailsWithStatusLockExisting){
                 errorMessages.add(String.format("Has error at booking detail relation showtime id, seat id and status lock already exist at booking detail id [%s]", bookingDetail.getId()));
             }
             throw new RequestInvalidException(String.join("\n", errorMessages));

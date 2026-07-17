@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.djnd.cinema_java_spring.domain.entity.*;
+import com.djnd.cinema_java_spring.domain.enumeration.SeatStatus;
 import com.djnd.cinema_java_spring.repository.*;
 import com.djnd.cinema_java_spring.web.rest.errors.*;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -61,6 +62,7 @@ public class BookingService {
     final PromotionRepository promotionRepository;
     final BookingDetailService bookingDetailService;
     final TicketRepository ticketRepository;
+    final SeatMaintenanceRepository seatMaintenanceRepository;
     // final TicketEventProducer ticketEventProducer;
     final BookingVoucherService bookingVoucherService;
     final CustomerVoucherService customerVoucherService;
@@ -112,17 +114,25 @@ public class BookingService {
         // start check seat exist db, if exist remove seat in redis
         List<String> errorMessages = new ArrayList<>();
         List<Seat> seats = seatService.getSeatAvailable(request.getSeatIds(), errorMessages);
-
+        Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+        // check seat with status maintenance
+        List<Integer> maintenanceSeatIds = seatMaintenanceRepository.findSeatIdsUnderMaintenance(showtime.getStartDateTime());
+        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
+        for(Integer seatId : seatIdsAvailable){
+            if(maintenanceSeatIds.contains(seatId)){
+                errorMessages.add("Seat with ID " + seatId + " is already maintenance!");
+            }
+        }
         if (!errorMessages.isEmpty()) {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
         // end check seat exist db, if exist remove seat in redis
 
-        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
+
         // start check showtime booking must be before current
-        Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+
         LocalDateTime now = LocalDateTime.now();
         if (showtime.getStartDateTime().isBefore(now)) {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
@@ -233,17 +243,25 @@ public class BookingService {
         // start check seat exist db, if exist remove seat in redis
         List<String> errorMessages = new ArrayList<>();
         List<Seat> seats = seatService.getSeatAvailable(request.getSeatIds(), errorMessages);
-
+        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
+        Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+        List<Integer> maintenanceSeatIds = seatMaintenanceRepository.findSeatIdsUnderMaintenance(showtime.getStartDateTime());
+        // check seat with status maintenance
+        for(Integer seatIdAvailable : seatIdsAvailable){
+            if(maintenanceSeatIds.contains(seatIdAvailable)){
+                errorMessages.add("Seat with ID " + seatIdAvailable + " already is maintenance!");
+            }
+        }
         if (!errorMessages.isEmpty()) {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
         // end check seat exist db, if exist remove seat in redis
 
-        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
+
         // start check showtime booking must be before current
-        Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+
         LocalDateTime now = LocalDateTime.now();
         if (showtime.getStartDateTime().isBefore(now)) {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
@@ -355,17 +373,25 @@ public class BookingService {
         // start check seat exist db, if exist remove seat in redis
         List<String> errorMessages = new ArrayList<>();
         List<Seat> seats = seatService.getSeatAvailable(request.getSeatIds(), errorMessages);
-
+        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
+        Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
+                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+        // check seat with status active
+        List<Integer> maintenanceSeatIds = seatMaintenanceRepository.findSeatIdsUnderMaintenance(showtime.getStartDateTime());
+        for(Integer seatId : seatIdsAvailable){
+            if(maintenanceSeatIds.contains(seatId)){
+                errorMessages.add("Seat with ID " + seatId + " already is maintenance!");
+            }
+        }
         if (!errorMessages.isEmpty()) {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
         // end check seat exist db, if exist remove seat in redis
 
-        List<Integer> seatIdsAvailable = seats.stream().map(Seat::getId).toList();
+
         // start check showtime booking must be before current
-        Showtime showtime = showtimeRepository.findById(request.getShowtimeId())
-                .orElseThrow(() -> new ResourceNotFoundException("Showtime not found!"));
+
         LocalDateTime now = LocalDateTime.now();
         if (showtime.getStartDateTime().isBefore(now)) {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());

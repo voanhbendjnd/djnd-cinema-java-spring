@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.djnd.cinema_java_spring.domain.enumeration.SeatStatus;
+import com.djnd.cinema_java_spring.repository.SeatMaintenanceRepository;
 import com.djnd.cinema_java_spring.web.rest.errors.OperationCannotPerformedException;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class SeatService {
     final SeatRepository seatRepository;
     final ShowtimeRepository showtimeRepository;
     final ShowtimePriceRepository showtimePriceRepository;
-
+    final SeatMaintenanceRepository seatMaintenanceRepository;
     public ResSeatAtRoomBookingDTO getSeatAtRoomLayoutByShowtime(Long showtimeId) {
         var res = new ResSeatAtRoomBookingDTO();
         Showtime showtime = showtimeRepository.findById(showtimeId)
@@ -45,17 +46,26 @@ public class SeatService {
         Map<SeatType, BigDecimal> priceSeatMap = priceMatrixList.stream()
                 .collect(Collectors.toMap(ShowtimePriceMatrix::getSeatType, ShowtimePriceMatrix::getFinalPrice));
         List<SeatLayoutDTO> seats = seatRepository.getSeatLayoutByShowtime(showtimeId);
+        List<Integer> maintenanceSeatIds = seatMaintenanceRepository.findSeatIdsUnderMaintenance(showtime.getStartDateTime());
+
         List<CloneSeatLayoutDTO> resSeats = seats.stream().map(x -> {
             CloneSeatLayoutDTO seatDTO = new CloneSeatLayoutDTO();
             seatDTO.setId(x.id());
             seatDTO.setBookingStatus(x.bookingStatus());
             seatDTO.setSeatNo(x.seatNo());
             seatDTO.setSeatRow(x.seatRow());
-            seatDTO.setStatus(x.status());
+//            seatDTO.setStatus(x.status());
             seatDTO.setType(x.type());
             return seatDTO;
         }).toList();
-
+        for(CloneSeatLayoutDTO seat : resSeats){
+            if(maintenanceSeatIds.contains(seat.getId())){
+                seat.setStatus(SeatStatus.MAINTENANCE);
+            }
+            else{
+                seat.setStatus(SeatStatus.ACTIVE);
+            }
+        }
         for (CloneSeatLayoutDTO seat : resSeats) {
             BigDecimal price = priceSeatMap.get(seat.getType());
             if (price != null) {
@@ -93,4 +103,7 @@ public class SeatService {
         seatRepository.save(currentSeat);
         return currentSeat.getSeatRow()  + currentSeat.getSeatNo();
     }
+
+
+
 }

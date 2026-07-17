@@ -30,6 +30,7 @@ public class TicketDTO {
     String seatPosition;
     SeatType seatType;
     LocalTime startDateTime;
+    LocalDateTime showtime;
     LocalTime endDateTime;
     String paymentMethod;
     String createdBy;

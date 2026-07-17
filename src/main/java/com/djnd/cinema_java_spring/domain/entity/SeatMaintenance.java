@@ -1,8 +1,6 @@
 package com.djnd.cinema_java_spring.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -22,6 +20,8 @@ import java.time.LocalDateTime;
 public class SeatMaintenance extends AbstractAuditingEntity<Integer> implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer id;
     @NotNull
     @Column(name = "seat_id", nullable = false)
