@@ -30,13 +30,15 @@ import java.util.Map;
 public class SeatMaintenanceService {
     final LoyaltyWalletService loyaltyWalletService;
     final SeatRepository seatRepository;
-    final CustomerRepository customerRepository;
     final SeatMaintenanceRepository seatMaintenanceRepository;
     final NotificationAsyncService notificationAsyncService;
     final TicketRepository ticketRepository;
     public SeatMaintenance createSeatMaintenance(SeatMaintenanceDTO seatMaintenanceDTO) {
         if(!seatRepository.existById(seatMaintenanceDTO.getSeatId())) {
             throw new RequestInvalidException("Seat does not exist");
+        }
+        if(seatMaintenanceRepository.existSeatMaintenanceBySeatIdAndTimeIn(seatMaintenanceDTO.getSeatId(), seatMaintenanceDTO.getStartTime(), seatMaintenanceDTO.getEndTime())) {
+            throw new RequestInvalidException("Seat maintenance with start time " +seatMaintenanceDTO.getStartTime()+ " and end time " + seatMaintenanceDTO.getEndTime()+"already exists");
         }
        SeatMaintenance seatMaintenance = SeatMaintenance.builder()
                .seatId(seatMaintenanceDTO.getSeatId())

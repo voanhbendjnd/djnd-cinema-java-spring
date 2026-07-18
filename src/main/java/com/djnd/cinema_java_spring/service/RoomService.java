@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.djnd.cinema_java_spring.domain.entity.SeatMaintenance;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatStatus;
+import com.djnd.cinema_java_spring.repository.SeatMaintenanceRepository;
 import com.djnd.cinema_java_spring.web.rest.errors.OperationCannotPerformedException;
 import jdk.jshell.Snippet;
 import org.springframework.data.domain.Pageable;
@@ -38,7 +40,7 @@ import lombok.experimental.FieldDefaults;
 public class RoomService {
     final RoomRepository roomRepository;
     final ShowtimeRepository showtimeRepository;
-
+    final SeatMaintenanceRepository seatMaintenanceRepository;
     public RoomDetailDTO createRoom(RoomDetailDTO roomDTO) {
         Room room = new Room();
         room.setName(roomDTO.getName());
@@ -162,14 +164,38 @@ public class RoomService {
 
     private RoomDetailDTO toSeatingChart(Room room) {
         List<SeatDTO> seats = null;
+        // seat maintenance if exist
+        List<SeatMaintenance> seatMaintenancesExisting = seatMaintenanceRepository.getSeatMaintenanceWithRoomId(room.getId());
+        Map<Integer, List<SeatMaintenance>> seatMaintenancesMapBySeatId;
+        if(!seatMaintenancesExisting.isEmpty()){
+            seatMaintenancesMapBySeatId = seatMaintenancesExisting.stream().collect(Collectors.groupingBy(SeatMaintenance::getSeatId));
+        } else {
+            seatMaintenancesMapBySeatId = null;
+        }
         if (room.getSeats() != null) {
             seats = room.getSeats().stream().map(x -> {
+                List<SeatMaintenance> seatMaintenances = seatMaintenancesMapBySeatId.get(x.getId());
+                List<SeatDTO.SeatMaintenanceDTO> seatMaintenancesDTO;
+                if(seatMaintenances == null || seatMaintenances.isEmpty()){
+                    seatMaintenancesDTO = new ArrayList<>();
+                }
+                else{
+                    seatMaintenancesDTO = seatMaintenances.stream().map(seatMaintenance -> {
+                        SeatDTO.SeatMaintenanceDTO dto = new SeatDTO.SeatMaintenanceDTO();
+                        dto.setReason(seatMaintenance.getReason());
+                        dto.setStartTime(seatMaintenance.getStartTime());
+                        dto.setEndTime(seatMaintenance.getEndTime());
+                        return dto;
+                    }).toList();
+                }
+
                 return SeatDTO.builder()
                         .id(x.getId())
                         .seatNo(x.getSeatNo())
                         .seatRow(x.getSeatRow())
                         .status(x.getStatus().toString())
                         .type(x.getType().toString())
+                        .seatMaintenances(seatMaintenancesDTO)
                         .build();
             }).toList();
         }

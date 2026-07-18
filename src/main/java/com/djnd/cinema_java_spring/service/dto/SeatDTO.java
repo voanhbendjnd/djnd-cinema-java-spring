@@ -8,6 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
@@ -20,4 +23,13 @@ public class SeatDTO {
     Integer seatNo;
     String type;
     String status;
+    List<SeatMaintenanceDTO> seatMaintenances;
+    @Getter
+    @Setter
+    @FieldDefaults(level = AccessLevel.PRIVATE)
+    public static class SeatMaintenanceDTO{
+        String reason;
+        LocalDateTime startTime;
+        LocalDateTime endTime;
+    }
 }
