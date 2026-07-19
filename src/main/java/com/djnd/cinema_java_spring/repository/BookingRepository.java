@@ -1,8 +1,11 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import com.djnd.cinema_java_spring.service.projection.SalesChartProjection;
+import com.djnd.cinema_java_spring.service.projection.TodayMetricsProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -22,11 +25,9 @@ import jakarta.persistence.LockModeType;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     /**
-     * mix op and pess lock with version
+     * mix op and pessimistic lock with version
      * FORCE_INCREMENT before end transaction it update version + 1 unit
      * 
-     * @param bookingId
-     * @return
      */
     // @Lock(LockModeType.PESSIMISTIC_FORCE_INCREMENT)
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -51,7 +52,29 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             left join b.customer c
             left join c.user u
             where b.id = :bookingId
-
-                """)
+            """)
     Optional<PublishCustomerBookingProjection> getPublishCustomerBookingDetailById(@Param("bookingId") Long bookingId);
+    @Query(value = """
+    select date(b.created_date) as date,
+                                       sum(b.total_amount) as revenue,
+                                       count(bd.id) as ticketsCount
+                               from Bookings b
+                               left join booking_detail bd on b.id = bd.booking_id
+                               where b.status = 'SUCCESS' and b.created_date >= date_sub(CURDATE(), INTERVAL 6 DAY)\s
+                               and b.payment_method <> 'EXCHANGE_USING_POINTS'
+                               group by date(b.created_date)
+                               order by date asc
+""", nativeQuery = true)
+    List<SalesChartProjection> getSalesChartMetrics();
+
+    @Query(value = """
+   select COALESCE (sum(b.total_amount), 0) as totalRevenue,
+                                                                                 count(bd.id) as ticketsSold,
+                                                                                 count(b.id) as newBookings
+                                                                                       from Bookings b
+                                                                          left join booking_detail bd
+                                                                          on bd.booking_id = b.id
+                                                                           where b.status = 'SUCCESS' and date(b.created_date) = CURDATE()
+""", nativeQuery = true)
+    TodayMetricsProjection getTodayRevenue();
 }

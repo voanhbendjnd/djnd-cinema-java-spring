@@ -387,10 +387,6 @@ public class BookingService {
             this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, request.getSeatIds());
             throw new ResourceNotFoundException(String.join("\n", errorMessages));
         }
-        // end check seat exist db, if exist remove seat in redis
-
-
-        // start check showtime booking must be before current
 
         LocalDateTime now = LocalDateTime.now();
         if (showtime.getStartDateTime().isBefore(now)) {
@@ -673,7 +669,7 @@ public class BookingService {
         bookingDetailService.changeDetailFromLockToUnlock(bookingDetails);
         Integer pointValueAfterCalculateWithTime = this.calculatorPointWithTimeOnThenDeviation(now, startTimeMovieShow, ticket.getPrice());
         loyaltyWalletService.handleEarnPointCustomer(customerByTicket,pointValueAfterCalculateWithTime);
-
+        bookingRepository.save(booking);
     }
 
     private Integer calculatorPointWithTimeOnThenDeviation(LocalDateTime now,LocalDateTime startTimeMovieShow, BigDecimal priceByTicket) {
@@ -699,4 +695,5 @@ public class BookingService {
             throw new RequestInvalidException("Cannot change ticket to loyalty point with current!");
         }
     }
+
 }

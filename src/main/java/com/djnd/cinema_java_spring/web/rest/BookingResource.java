@@ -45,4 +45,6 @@ public class BookingResource {
             throw new RequestInvalidException("Booking ID missing!");
         return ResponseEntity.ok(bookingService.getPublishBookingDetail(id));
     }
+
+
 }
