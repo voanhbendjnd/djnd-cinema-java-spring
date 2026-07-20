@@ -1,6 +1,7 @@
 package com.djnd.cinema_java_spring.repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -59,13 +60,18 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                        sum(b.total_amount) as revenue,
                                        count(bd.id) as ticketsCount
                                from Bookings b
-                               left join booking_detail bd on b.id = bd.booking_id
-                               where b.status = 'SUCCESS' and b.created_date >= date_sub(CURDATE(), INTERVAL 6 DAY)\s
-                               and b.payment_method <> 'EXCHANGE_USING_POINTS'
+                                    left join booking_detail bd on b.id = bd.booking_id
+                                    left join showtimes s on s.id = bd.showtime_id
+                                    left join rooms r on r.id = s.room_id
+                               where b.status = 'SUCCESS' 
+                                    and b.created_date >= :fromDate
+                                    and b.created_date < :toDate
+                                    and b.payment_method <> 'EXCHANGE_USING_POINTS'
+                                    and (:roomId is null or r.id = :roomId)
                                group by date(b.created_date)
                                order by date asc
 """, nativeQuery = true)
-    List<SalesChartProjection> getSalesChartMetrics();
+    List<SalesChartProjection> getSalesChartMetrics(@Param("fromDate") LocalDateTime fromDate,  @Param("toDate") LocalDateTime toDate, @Param("roomId") Integer roomId);
 
     @Query(value = """
    select COALESCE (sum(b.total_amount), 0) as totalRevenue,

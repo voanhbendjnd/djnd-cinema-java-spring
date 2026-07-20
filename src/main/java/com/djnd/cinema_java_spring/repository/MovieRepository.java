@@ -1,8 +1,10 @@
 package com.djnd.cinema_java_spring.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.djnd.cinema_java_spring.service.projection.TopMovieProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -42,4 +44,24 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
                 where m.id = :id
             """)
     Optional<Movie> findDetailById(@Param("id") Integer id);
+
+    @Query(value = """
+
+            select distinct m.id as movieId, m.title as movieTitle, m.poster_url as posterUrl
+    , sum(b.total_amount) as totalRevenue
+    , count(t.id) as ticketsSold
+    , count(st.id) as totalShowtimes
+    from movies m
+    join showtimes st on m.id= st.movie_id
+    join booking_detail bd on bd.showtime_id = st.id
+    join bookings b on bd.booking_id = b.id
+    join tickets t on t.booking_id = b.id
+    where
+    b.created_date >= :fromDateTime and b.created_date < :toDateTime
+    and m.status = 'SHOWING'
+    group by movieId, movieTitle, posterUrl
+    order by totalRevenue desc
+    limit :limit
+    """, nativeQuery = true)
+    List<TopMovieProjection> getTopPerformingMovies(@Param("fromDateTime")LocalDateTime fromDateTime, @Param("toDateTime") LocalDateTime toDateTime, @Param("limit") int limit);
 }
