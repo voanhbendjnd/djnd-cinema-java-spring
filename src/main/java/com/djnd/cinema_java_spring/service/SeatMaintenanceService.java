@@ -27,12 +27,14 @@ import java.util.Map;
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
+@Transactional
 public class SeatMaintenanceService {
     final LoyaltyWalletService loyaltyWalletService;
     final SeatRepository seatRepository;
     final SeatMaintenanceRepository seatMaintenanceRepository;
     final NotificationAsyncService notificationAsyncService;
     final TicketRepository ticketRepository;
+    final TicketService ticketService;
     public SeatMaintenance createSeatMaintenance(SeatMaintenanceDTO seatMaintenanceDTO) {
         if(!seatRepository.existById(seatMaintenanceDTO.getSeatId())) {
             throw new RequestInvalidException("Seat does not exist");
@@ -69,6 +71,7 @@ public class SeatMaintenanceService {
 
         }
         if(!mailList.isEmpty()){
+            ticketService.deleteTicketsForCustomer(ticketsImpact.stream().map(Ticket::getId).toList());
             notificationAsyncService.sendMailSeatMaintenanceForCustomer(mailList);
 
         }

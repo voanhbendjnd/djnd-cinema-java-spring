@@ -75,8 +75,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     @Query(value = """
    select COALESCE (sum(b.total_amount), 0) as totalRevenue,
-                                                                                 count(bd.id) as ticketsSold,
-                                                                                 count(b.id) as newBookings
+                                                                                 count(distinct bd.id) as ticketsSold,
+                                                                                 count(distinct b.id) as newBookings
                                                                                        from Bookings b
                                                                           left join booking_detail bd
                                                                           on bd.booking_id = b.id

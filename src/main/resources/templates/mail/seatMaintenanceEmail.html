@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Seat Maintenance Notice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f6f6f6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            color: #d9534f;
+            text-align: center;
+        }
+
+        .content {
+            font-size: 16px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        .point {
+            color: #28a745;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <h2 class="header">
+        Seat Maintenance Notice
+    </h2>
+
+    <div class="content">
+
+        <p>Dear Customer,</p>
+
+        <p>
+            We sincerely apologize for the inconvenience caused by the maintenance of your reserved seat.
+        </p>
+
+        <p>
+            We would like to inform you that the seat you booked has been scheduled for maintenance
+            and cannot be used for your upcoming movie session.
+        </p>
+
+        <div class="info">
+            <p>
+                <strong>Movie:</strong>
+                <span th:text="${movieName}"></span>
+            </p>
+
+            <p>
+                <strong>Showtime:</strong>
+                <span th:text="${startTime}"></span>
+            </p>
+
+            <p>
+                <strong>Seat position:</strong>
+                <span th:text="${positionSeatMaintenance}"></span>
+            </p>
+        </div>
+
+        <p>
+            To ensure the best experience for all customers, we have decided to temporarily disable
+            this seat for maintenance.
+        </p>
+
+        <p>
+            The points used for this booking will be automatically refunded back to your account
+            in our system.
+        </p>
+
+        <p class="point">
+            Your points will be restored shortly. Please check your account balance later.
+        </p>
+
+        <p>
+            We apologize again for this inconvenience and appreciate your understanding.
+        </p>
+
+        <p>
+            Thank you for choosing our cinema service.
+        </p>
+
+    </div>
+
+    <div class="footer">
+        <p>
+            Best regards,<br>
+            Cinema Management Team
+        </p>
+    </div>
+
+</div>
+</body>
+</html>

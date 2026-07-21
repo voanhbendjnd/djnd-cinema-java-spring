@@ -660,7 +660,7 @@ public class BookingService {
             throw new ResourceNotFoundException("Customer not found!");
         }
         // delete ticket
-        ticketService.deleteTicketForCustomerChangeTicketToPoint(ticketId);
+        ticketService.deleteTicketForCustomer(ticketId);
         // change status booking detail
         List<BookingDetail> bookingDetails = booking.getBookingDetails();
         if(bookingDetails == null || bookingDetails.isEmpty()){

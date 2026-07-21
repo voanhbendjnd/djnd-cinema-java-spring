@@ -23,13 +23,12 @@ public class LoyaltyWalletService {
     final CustomerService customerService;
     public void handleEarnPointCustomer(Customer customer, Integer baseAmount) {
         if(customer != null){
-            Integer amountPoints = baseAmount / 100;
-            customer.setLoyaltyPoints(customer.getLoyaltyPoints() + amountPoints);
+            customer.setLoyaltyPoints(customer.getLoyaltyPoints() + baseAmount);
             customerRepository.save(customer);
             PointHistory saveEarnPointHistory = PointHistory.builder()
                     .customerId(customer.getUserId())
                     .type(PointTransactionType.EARN)
-                    .amountPoints(amountPoints)
+                    .amountPoints(baseAmount)
                     .description("Customer payment successfully complete and receive reward points to wallet")
                     .build();
             pointHistoryRepository.save(saveEarnPointHistory);
@@ -39,17 +38,16 @@ public class LoyaltyWalletService {
 
     public void handleSpendPointCustomer(Customer customer, Integer baseAmount) {
         if(customer != null){
-            Integer amountPoints = baseAmount / 100;
             Integer currentPointsByCustomer = customer.getLoyaltyPoints();
-            if(currentPointsByCustomer <= 0 || currentPointsByCustomer <  amountPoints){
+            if(currentPointsByCustomer <= 0 || currentPointsByCustomer <  baseAmount){
                 throw new OperationCannotPerformedException("Cannot use point exchange to ticket!");
             }
-            customer.setLoyaltyPoints(currentPointsByCustomer - amountPoints);
+            customer.setLoyaltyPoints(currentPointsByCustomer - baseAmount);
             customerRepository.save(customer);
             PointHistory saveEarnPointHistory = PointHistory.builder()
                     .customerId(customer.getUserId())
                     .type(PointTransactionType.SPEND)
-                    .amountPoints(amountPoints)
+                    .amountPoints(baseAmount)
                     .description("Customer use point change with ticket system!")
                     .build();
             pointHistoryRepository.save(saveEarnPointHistory);
