@@ -68,6 +68,8 @@ public class BookingService {
     final CustomerVoucherService customerVoucherService;
     final PaymentHistoryRepository paymentHistoryRepository;
     final LoyaltyWalletService loyaltyWalletService;
+    final BookingVoucherRepository bookingVoucherRepository;
+    final TransactionHistoryService transactionHistoryService;
     private static final String EXPIRE_TIME_HOLDING_SEATS = "600"; // 10 minutes
     static final String LUA_HOLD_SEATS_AT_SHOWTIME = "local showtimeKey = KEYS[1] " +
             "local expireTime = tonumber(ARGV[1]) " +
@@ -203,8 +205,10 @@ public class BookingService {
                 booking.setStatus(success);
                 booking = bookingRepository.save(booking);
                 paymentHistoryService.createHistoryWithStatus(booking, success);
-                ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIdsAvailable,
+                java.util.Map<Long, BigDecimal> ticketPriceMap = ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIdsAvailable,
                         showtime.getId());
+                // save in transaction history
+                transactionHistoryService.createTransactionHistoryWithBookingTicketSuccess(ticketPriceMap);
                 bookingRepository.flush();
 
                 this.removeSeatsWithShowtimeOnRedis(showtimeRedisKey, seatIdsAvailable);
@@ -353,7 +357,7 @@ public class BookingService {
                 argsRedis.toArray());
         if (occupiedSeatIds != null && !occupiedSeatIds.isEmpty()) {
             List<Integer> errorOccupiedSeatIds = occupiedSeatIds.stream().map(Integer::parseInt).toList();
-            throw new SeatOccupiedException("Some seat are already holding or sold!", errorOccupiedSeatIds);
+            throw new SeatOccupiedException("Some seat are  already holding or sold!", errorOccupiedSeatIds);
         }
         return showtimeRedisKey;
     }
@@ -532,6 +536,13 @@ public class BookingService {
             return response;
         }
         if ("00".equals(responseCode)) {
+            BookingVoucher bookingVoucher = bookingVoucherRepository.findByBookingId(bookingId).orElse(null);
+            Double discountPercentage;
+            if(bookingVoucher != null) {
+                discountPercentage = bookingVoucher.getDiscountPercentage();
+            } else {
+                discountPercentage = null;
+            }
             BookingStatus success = BookingStatus.SUCCESS;
             booking.setStatus(success);
             booking.setVersion(booking.getVersion() + 1);
@@ -540,8 +551,15 @@ public class BookingService {
             history.setStatus(success);
             paymentHistoryRepository.save(history);
             // init & save tickets
-            ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIds, showtimeId);
+            if(bookingVoucher != null && discountPercentage != null) {
+                double percent = (100 - discountPercentage)/100;
+                booking.getBookingDetails().forEach(detail ->{
+                    detail.setPrice(detail.getPrice().multiply(BigDecimal.valueOf(percent)));
+                });
+            }
 
+            Map<Long, BigDecimal> ticketPriceMap = ticketService.createTicketsWithBookingDetailsWhenPaymentBookingSuccess(booking, seatIds, showtimeId);
+            transactionHistoryService.createTransactionHistoryWithBookingTicketSuccess(ticketPriceMap);
             // call producer
             // User customer = booking.getCustomer().getUser();
             // List<TicketDTO> tickets = ticketService.getTicketByBookingId(bookingId);
@@ -660,7 +678,7 @@ public class BookingService {
             throw new ResourceNotFoundException("Customer not found!");
         }
         // delete ticket
-        ticketService.deleteTicketForCustomer(ticketId);
+        ticketService.deleteOneTicket(ticketId);
         // change status booking detail
         List<BookingDetail> bookingDetails = booking.getBookingDetails();
         if(bookingDetails == null || bookingDetails.isEmpty()){

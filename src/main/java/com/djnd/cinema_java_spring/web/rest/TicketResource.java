@@ -2,6 +2,7 @@ package com.djnd.cinema_java_spring.web.rest;
 
 import java.util.List;
 
+import com.djnd.cinema_java_spring.service.dto.TicketRefundInfoDTO;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -53,4 +54,12 @@ public class TicketResource {
         return ResponseEntity.ok(ticketService.getTicketByBookingId(bookingId));
 
     }
+    @GetMapping("/tickets/{id}/refund-info")
+    @ApiMessage("Get ticket refund information")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.STAFF + "','" + AuthoritiesConstants.ADMIN + "', '"
+            + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<TicketRefundInfoDTO> getTicketRefundInfo(@Positive @PathVariable("id") Long ticketId) {
+        return ResponseEntity.ok(ticketService.getTicketRefundInfo(ticketId));
+    }
+
 }

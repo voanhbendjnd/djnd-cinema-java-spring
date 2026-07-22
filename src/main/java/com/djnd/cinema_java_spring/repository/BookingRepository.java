@@ -83,4 +83,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                                                            where b.status = 'SUCCESS' and date(b.created_date) = CURDATE()
 """, nativeQuery = true)
     TodayMetricsProjection getTodayRevenue();
+
+
 }

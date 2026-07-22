@@ -1,5 +1,7 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import com.djnd.cinema_java_spring.service.TransactionHistoryService;
+import com.djnd.cinema_java_spring.service.dto.TransactionHistoryDTO;
 import jakarta.validation.constraints.Positive;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +28,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class BookingController {
     final BookingService bookingService;
-
+    final TransactionHistoryService transactionHistoryService;
     private void validRequestBooking(BookingRequestDTO requestDTO) {
         try {
             PaymentMethod.valueOf(requestDTO.getPaymentMethod());
@@ -76,4 +78,12 @@ public class BookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.getTicketWithPoint(request));
     }
 
+    @PostMapping("/refund")
+    @ApiMessage("Refund for customer by staff")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.STAFF + "','" + AuthoritiesConstants.ADMIN + "', '"
+            + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<Void> refund(@Valid @RequestBody TransactionHistoryDTO transactionHistoryDTO) {
+        transactionHistoryService.refundForCustomer(transactionHistoryDTO);
+        return ResponseEntity.ok(null);
+    }
 }

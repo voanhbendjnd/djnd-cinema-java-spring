@@ -54,4 +54,5 @@ public class Booking extends AbstractAuditingEntity<Long> implements Serializabl
 
     @OneToOne(mappedBy = "booking", cascade = {CascadeType.MERGE, CascadeType.PERSIST })
     BookingVoucher bookingVoucher;
+
 }

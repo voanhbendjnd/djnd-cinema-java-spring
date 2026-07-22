@@ -1,12 +1,16 @@
 package com.djnd.cinema_java_spring.service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import com.djnd.cinema_java_spring.service.dto.TicketRefundInfoDTO;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,7 +43,25 @@ public class TicketService {
     final TicketRepository ticketRepository;
     final BookingRepository bookingRepository;
     final SeatRealtime seatRealtime;
-
+    public TicketRefundInfoDTO getTicketRefundInfo(Long ticketId){
+        Ticket currentTicket = ticketRepository.getTicketRefund(ticketId).orElseThrow(()-> new ResourceNotFoundException("Ticket not found!"));
+        LocalDateTime currentDate = LocalDateTime.now();
+        LocalDateTime startShowtimeMovie = currentTicket.getShowtime().getStartDateTime();
+        if(currentDate.isBefore(startShowtimeMovie)){
+            throw new RequestInvalidException("Showtime already showing cannot operation!");
+        }
+        return TicketRefundInfoDTO.builder()
+                .bookingCode(currentTicket.getBooking().getBookingCode())
+                .seatPosition(currentTicket.getSeat().getSeatRow() + currentTicket.getSeat().getSeatNo())
+                .customerEmail(currentTicket.getBooking().getCustomer().getUser().getEmail())
+                .ticketCode(currentTicket.getCode())
+                .originalAmount(currentTicket.getPrice())
+                .refundAmount(currentTicket.getPrice())
+                .movieTitle(currentTicket.getShowtime().getMovie().getTitle())
+                .showtime(currentTicket.getShowtime().getStartDateTime())
+                .ticketId(currentTicket.getId())
+                .build();
+    }
     public ResultPaginationDTO getAllTicketWithCustomer(Pageable pageable) {
         Long customerId = SecurityUtils.getCurrentUserIdOrNull();
         if (customerId == null) {
@@ -114,7 +136,7 @@ public class TicketService {
 
     public void checkTicketWithSeatSold(Long showtimeId, List<Integer> seatIds, List<String> errorMessages) {
         List<String> positionSeats = ticketRepository.getSeatsPositionSold(showtimeId, seatIds);
-        if (positionSeats != null && positionSeats.isEmpty()) {
+        if (positionSeats != null && !positionSeats.isEmpty()) {
             for (String position : positionSeats) {
                 errorMessages.add("Already ticket with seat [" + position + "]");
             }
@@ -150,8 +172,8 @@ public class TicketService {
     }
 
     @Transactional
-    public List<Ticket> createTicketsWithBookingDetailsWhenPaymentBookingSuccess(Booking bookingExisting,
-            List<Integer> seatIds, Long showtimeId) {
+    public Map<Long, BigDecimal> createTicketsWithBookingDetailsWhenPaymentBookingSuccess(Booking bookingExisting,
+                                                                                          List<Integer> seatIds, Long showtimeId) {
         if (bookingExisting != null && bookingExisting.getBookingDetails() != null) {
             if (ticketRepository.existByShowtimeIdAndSeatIdIn(showtimeId, seatIds)) {
                 throw new RequestInvalidException("Duplicated ticket!");
@@ -169,7 +191,7 @@ public class TicketService {
             try {
                 saveTickets = ticketRepository.saveAll(saveTickets);
                 seatRealtime.sendSeatSold(showtimeId, seatIds);
-                return saveTickets;
+                return saveTickets.stream().collect(Collectors.toMap(Ticket::getId  , Ticket::getPrice));
 
             } catch (DataIntegrityViolationException ex) {
                 throw new RequestInvalidException("Seat had already exist ticket!");
@@ -180,11 +202,11 @@ public class TicketService {
     }
 
     @Transactional
-    public void deleteTicketForCustomer(Long ticketId){
+    public void deleteOneTicket(Long ticketId){
         this.ticketRepository.deleteById(ticketId);
     }
     @Transactional
-    public void deleteTicketsForCustomer(List<Long> ticketIds){
+    public void deleteTickets(List<Long> ticketIds){
         ticketRepository.deleteAllById(ticketIds);
     }
 

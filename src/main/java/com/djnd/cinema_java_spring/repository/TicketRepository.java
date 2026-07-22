@@ -53,6 +53,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     and t.showtime.startDateTime between :startTimeMaintenance and :endTimeMaintenance
 """)
     List<Ticket> getAllTicketCustomerAlreadyHasWithSeatMaintenanceAndTimeIn(@Param("seatId") Integer seatId, @Param("startTimeMaintenance") LocalDateTime startTimeMaintenance, @Param("endTimeMaintenance")LocalDateTime endTimeMaintenance);
+
+    @Query(value = "select t from Ticket t left join fetch t.booking b left join fetch b.customer.user where t.id = :ticketId")
+    Optional<Ticket> findWithDetailBookingById(@Param("ticketId") Long ticketId);
+    @EntityGraph(attributePaths = {"showtime", "showtime.movie", "seat", "booking", "booking.customer.user"})
+    @Query(value = "select t from Ticket t where t.id = :ticketId")
+    Optional<Ticket> getTicketRefund(@Param("ticketId") Long ticketId);
 }
 
 

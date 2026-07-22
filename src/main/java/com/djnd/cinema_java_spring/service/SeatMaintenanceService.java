@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -66,12 +67,12 @@ public class SeatMaintenanceService {
             seatMaintenanceMailDTO.setMovieTitle(ticket.getShowtime().getMovie().getTitle());
             seatMaintenanceMailDTO.setPositionSeatMaintenance(positionSeatMaintenance);
             seatMaintenanceMailDTO.setEmailCustomerImpact(customer.getUser().getEmail());
-            loyaltyWalletService.handleEarnPointCustomer(customer, ticket.getPrice().intValue());
+            loyaltyWalletService.handleEarnPointCustomer(customer, ticket.getPrice().multiply(BigDecimal.valueOf(1.2)).intValue());
             mailList.add(seatMaintenanceMailDTO);
 
         }
         if(!mailList.isEmpty()){
-            ticketService.deleteTicketsForCustomer(ticketsImpact.stream().map(Ticket::getId).toList());
+            ticketService.deleteTickets(ticketsImpact.stream().map(Ticket::getId).toList());
             notificationAsyncService.sendMailSeatMaintenanceForCustomer(mailList);
 
         }

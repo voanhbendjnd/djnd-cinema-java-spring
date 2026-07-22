@@ -34,8 +34,8 @@ public class PaymentController {
     @GetMapping("/vnpay-return")
     @ApiMessage("Vnpay return server")
     public ResponseEntity<Map<String, String>> handleVNPayReturn(@RequestParam Map<String, String> params) {
-        System.out.println("========== CALLBACK ==========");
-        System.out.println(LocalDateTime.now());
+//        System.out.println("========== CALLBACK ==========");
+//        System.out.println(LocalDateTime.now());
         Map<String, String> res = bookingService.processVNPayCallback(params);
         return ResponseEntity.ok(res);
     }

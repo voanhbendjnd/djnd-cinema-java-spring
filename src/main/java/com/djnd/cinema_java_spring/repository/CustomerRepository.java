@@ -45,5 +45,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     @Query(value = "select exists(select 1 from Customer c where c.id = :customerId)")
     boolean existByCustomerId(@Param("customerId") Long customerId);
+    @Query(value = "select c from Customer c join c.user u where u.email = :email")
+    Optional<Customer> findOneByEmail(@Param("email") String email);
 
 }
