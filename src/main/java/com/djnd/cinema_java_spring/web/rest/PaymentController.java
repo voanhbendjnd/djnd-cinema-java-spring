@@ -32,7 +32,7 @@ public class PaymentController {
     }
 
     @GetMapping("/vnpay-return")
-    @ApiMessage("Vnpay return server")
+    @ApiMessage("Payment return server")
     public ResponseEntity<Map<String, String>> handleVNPayReturn(@RequestParam Map<String, String> params) {
         Map<String, String> res = bookingService.processVNPayCallback(params);
         return ResponseEntity.ok(res);
