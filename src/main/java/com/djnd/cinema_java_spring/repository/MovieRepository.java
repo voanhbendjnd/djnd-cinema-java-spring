@@ -50,7 +50,26 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
             select distinct m.id as movieId, m.title as movieTitle, m.poster_url as posterUrl
     , sum(b.total_amount) as totalRevenue
     , count(t.id) as ticketsSold
-    , count(st.id) as totalShowtimes
+    , (select count(st1.id) from showtimes st1 where st1.movie_id = m.id and st1.status = 'ACTIVE') as totalShowtimes
+                ,ROUND(
+                         COUNT(DISTINCT t.id) * 100.0 /
+                         NULLIF(
+                             (
+                                 SELECT SUM(seat_count)
+                                 FROM (
+                                     SELECT 
+                                            COUNT(s.id) AS seat_count
+                                     FROM showtimes st2
+                                     JOIN rooms r ON r.id = st2.room_id
+                                     JOIN seats s ON s.room_id = r.id
+                                     WHERE st2.movie_id = m.id
+                                     GROUP BY st2.id
+                                 ) as x
+                             ),
+                             0
+                         ),
+                         2
+                     ) AS occupancyRate
     from movies m
     join showtimes st on m.id= st.movie_id
     join booking_detail bd on bd.showtime_id = st.id
@@ -59,7 +78,7 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
     where
     b.created_date >= :fromDateTime and b.created_date < :toDateTime
     and m.status = 'SHOWING'
-    group by movieId, movieTitle, posterUrl
+    group by m.id, m.title, m.poster_url
     order by totalRevenue desc
     limit :limit
     """, nativeQuery = true)

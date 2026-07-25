@@ -7,6 +7,7 @@ public interface TopMovieProjection {
     String getMovieTitle();
     BigDecimal getTotalRevenue();
     Long getTicketsSold();
-    Long getTotalShowtime();
+    Long getTotalShowtimes();
     String getPosterUrl();
+    Double getOccupancyRate();
 }
