@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import com.djnd.cinema_java_spring.domain.entity.SeatMaintenance;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatStatus;
 import com.djnd.cinema_java_spring.repository.SeatMaintenanceRepository;
+import com.djnd.cinema_java_spring.service.dto.*;
 import com.djnd.cinema_java_spring.web.rest.errors.OperationCannotPerformedException;
 import jdk.jshell.Snippet;
 import org.springframework.data.domain.Pageable;
@@ -21,10 +22,6 @@ import com.djnd.cinema_java_spring.domain.enumeration.RoomType;
 import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
 import com.djnd.cinema_java_spring.repository.RoomRepository;
 import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
-import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
-import com.djnd.cinema_java_spring.service.dto.RoomDTO;
-import com.djnd.cinema_java_spring.service.dto.RoomDetailDTO;
-import com.djnd.cinema_java_spring.service.dto.SeatDTO;
 import com.djnd.cinema_java_spring.service.projection.RoomNameProjection;
 import com.djnd.cinema_java_spring.web.rest.errors.RequestInvalidException;
 import com.djnd.cinema_java_spring.web.rest.errors.ResourceNotFoundException;
@@ -85,7 +82,7 @@ public class RoomService {
                 .collect(Collectors.toMap(seat -> seat.getSeatRow() + '-' + seat.getSeatNo(),
                         seat -> SeatType.valueOf(seat.getType())));
         // position seat - status seat
-        Map<String, SeatStatus> seatStatusMap = roomDetailDTO.getSeats().stream().collect(Collectors.toMap(seat -> seat.getSeatRow() + '-' + seat.getSeatNo(),seat -> SeatStatus.valueOf(seat.getStatus())));
+        Map<String, SeatStatus> seatStatusMap = roomDetailDTO.getSeats().stream().collect(Collectors.toMap(seat -> seat.getSeatRow() + '-' + seat.getSeatNo(),seat -> SeatStatus.ACTIVE));
         for (char row = 'A'; row < 'A' + roomDetailDTO.getTotalRows(); row++) {
             String rowStr = String.valueOf(row);
             for (int no = 1; no <= roomDetailDTO.getTotalCols(); no++) {
@@ -94,6 +91,12 @@ public class RoomService {
                 seat.setSeatNo(no);
 
                 seat.setRoom(room);
+                String coordinateKey3D = rowStr + no;
+                Integer totalColumns = roomDetailDTO.getTotalCols();
+                SeatCoordinatesDTO xyz3D = SeatCoordinatesDTO.calculate3DPosition(coordinateKey3D,totalColumns);
+                seat.setPosX(xyz3D.getX());
+                seat.setPosY(xyz3D.getY());
+                seat.setPosZ(xyz3D.getZ());
                 String coordinateKey = rowStr + "-" + no;
                 SeatType dynamicType = seatTypeMap.get(coordinateKey);
                 SeatStatus dynamicStatus = seatStatusMap.get(coordinateKey);
@@ -174,7 +177,11 @@ public class RoomService {
         }
         if (room.getSeats() != null) {
             seats = room.getSeats().stream().map(x -> {
-                List<SeatMaintenance> seatMaintenances = seatMaintenancesMapBySeatId.get(x.getId());
+                List<SeatMaintenance> seatMaintenances = null;
+                if(seatMaintenancesMapBySeatId != null){
+                    seatMaintenances = seatMaintenancesMapBySeatId.get(x.getId());
+
+                }
                 List<SeatDTO.SeatMaintenanceDTO> seatMaintenancesDTO;
                 if(seatMaintenances == null || seatMaintenances.isEmpty()){
                     seatMaintenancesDTO = new ArrayList<>();
