@@ -2,13 +2,17 @@ package com.djnd.cinema_java_spring.web.rest;
 
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.StatisticService;
+import com.djnd.cinema_java_spring.service.dto.OccupancyReportDTO;
 import com.djnd.cinema_java_spring.service.dto.ResStatisticMetricDTO;
-import com.djnd.cinema_java_spring.service.projection.TopMovieProjection;
+import com.djnd.cinema_java_spring.service.projection.OccupancyMovieDetailProjection;
 import com.djnd.cinema_java_spring.util.annotation.ApiMessage;
+import io.jsonwebtoken.io.IOException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.swing.*;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -46,7 +51,7 @@ public class StatisticResource {
     @ApiMessage("Show top movie by total revenue")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '"
             + AuthoritiesConstants.MANAGER + "')")
-    public ResponseEntity<List<TopMovieProjection>> getTopMovies(@RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate fromDate, @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate toDate, @RequestParam(name = "limit", required = false) Integer limit) {
+    public ResponseEntity<List<OccupancyMovieDetailProjection>> getTopMovies(@RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate fromDate, @RequestParam(name = "toDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)LocalDate toDate, @RequestParam(name = "limit", required = false) Integer limit) {
         if(fromDate == null){
             fromDate = LocalDate.now().minusDays(7);
         }
@@ -58,5 +63,46 @@ public class StatisticResource {
         }
 
         return ResponseEntity.ok(statisticService.getTopMovieStatistics(fromDate, toDate, limit));
+    }
+
+
+    @GetMapping("/occupancy/preview")
+    @ApiMessage("Get occupancy statistics preview")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '"
+            + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<OccupancyReportDTO> previewExport(@RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate, @RequestParam(name = "toDate", required = false )@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate, @RequestParam(name = "limit", required = false) Integer limit){
+        if(fromDate == null){
+            fromDate = LocalDate.now().minusDays(7);
+        }
+        if(toDate == null){
+            toDate = LocalDate.now();
+        }
+        if(limit == null){
+            limit = 10;
+        }
+        return ResponseEntity.ok(statisticService.getReportOccupancy(fromDate, toDate, limit));
+    }
+
+    @GetMapping("/occupancy/export")
+//    @ApiMessage("Export statistic occupancy cinema")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "', '"
+            + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<byte[]> exportOccupancyReport(@RequestParam(name = "fromDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate, @RequestParam(name = "toDate", required = false )@DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate, @RequestParam(name = "limit", required = false) Integer limit) throws IOException {
+        String filename = "ReportStatistic_" + LocalDate.now().toString() + ".xlsx";
+        if(fromDate == null){
+            fromDate = LocalDate.now().minusDays(7);
+        }
+        if(toDate == null){
+            toDate = LocalDate.now();
+        }
+        if(limit == null){
+            limit = 10;
+        }
+        byte [] excelBytes = statisticService.exportToExcel(fromDate, toDate, limit);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(excelBytes.length)
+                .body(excelBytes);
     }
 }

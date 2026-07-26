@@ -44,6 +44,9 @@ public class ResFormatResponse implements ResponseBodyAdvice<Object> {
         if (body instanceof String || body instanceof Resource || body instanceof ResourceRegion) {
             return body;
         }
+        if (body instanceof byte[]) {
+            return body;
+        }
 
         if (body instanceof Collection) {
             Collection<?> collection = (Collection<?>) body;

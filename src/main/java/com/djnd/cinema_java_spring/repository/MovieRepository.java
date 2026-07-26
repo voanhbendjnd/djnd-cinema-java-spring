@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import com.djnd.cinema_java_spring.service.projection.TopMovieProjection;
+import com.djnd.cinema_java_spring.service.projection.OccupancyMovieDetailProjection;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -82,5 +82,5 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
     order by totalRevenue desc
     limit :limit
     """, nativeQuery = true)
-    List<TopMovieProjection> getTopPerformingMovies(@Param("fromDateTime")LocalDateTime fromDateTime, @Param("toDateTime") LocalDateTime toDateTime, @Param("limit") int limit);
+    List<OccupancyMovieDetailProjection> getTopPerformingMovies(@Param("fromDateTime")LocalDateTime fromDateTime, @Param("toDateTime") LocalDateTime toDateTime, @Param("limit") int limit);
 }

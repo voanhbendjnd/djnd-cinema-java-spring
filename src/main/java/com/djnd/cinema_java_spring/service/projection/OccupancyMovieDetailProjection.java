@@ -2,7 +2,7 @@ package com.djnd.cinema_java_spring.service.projection;
 
 import java.math.BigDecimal;
 
-public interface TopMovieProjection {
+public interface OccupancyMovieDetailProjection {
     Integer getMovieId();
     String getMovieTitle();
     BigDecimal getTotalRevenue();

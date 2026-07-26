@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.djnd.cinema_java_spring.service.projection.OccupancyProjection;
 import com.djnd.cinema_java_spring.service.projection.SalesChartProjection;
 import com.djnd.cinema_java_spring.service.projection.TodayMetricsProjection;
 import org.springframework.data.domain.Page;
@@ -84,5 +85,39 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 """, nativeQuery = true)
     TodayMetricsProjection getTodayRevenue();
 
+    @Query(value = """
+    select\s
+        	count(t0.id) as totalTicketsSold
+        	, (	select sum(r3.total_seats) from rooms r3) as totalCapacity
+    
+        	, round(
+        		count(distinct t0.id) * 100.0
+        		/ nullif(
+        		(
+        		select\s
+        			sum(r2.total_seats)
+        			from rooms r2
+        		)
+    
+        		,0)
+    
+        	) as overallOccupancyRate
+        from\s
+        	showtimes st0
+        join
+        	tickets t0
+        on\s
+        	t0.showtime_id = st0.id
+        join\s
+        	bookings b0
+     	on\s
+     		b0.id = t0.booking_id
+     	where
+     		b0.created_date >= :fromDate 
+        and b0.created_date < :toDate
+    
+    
+""", nativeQuery = true)
+    Optional<OccupancyProjection> getStatisticReportOccupancy(@Param("fromDate") LocalDateTime fromDate, @Param("toDate") LocalDateTime toDate);
 
 }
