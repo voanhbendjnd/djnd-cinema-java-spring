@@ -1,5 +1,6 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import com.djnd.cinema_java_spring.domain.enumeration.BookingStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,8 +33,21 @@ public class BookingResource {
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.STAFF + "','" + AuthoritiesConstants.ADMIN + "', '"
             + AuthoritiesConstants.MANAGER + "')")
     public ResponseEntity<ResultPaginationDTO> fetchAllBooking(@RequestParam(value = "q", required = true) String q,
-            Pageable pageable) {
-        return ResponseEntity.ok(bookingService.getAllBookingWithPagination(pageable, q));
+            Pageable pageable, @RequestParam(name = "status", required = false) String status, @RequestParam(name = "sortBy", required = false) String sort) {
+        BookingStatus statusEnum = null;
+        if(status != null){
+            try{
+               statusEnum= BookingStatus.valueOf(status);
+            }
+            catch(Exception Ex){
+                throw new RequestInvalidException("State status invalid format!");
+            }
+        }
+        if(sort == null){
+            sort = "b.createdDate";
+        }
+
+        return ResponseEntity.ok(bookingService.getAllBookingWithPagination(pageable, q, statusEnum, sort));
     }
 
     @GetMapping("/bookings/publish/{id}")

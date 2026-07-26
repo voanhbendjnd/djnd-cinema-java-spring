@@ -72,6 +72,7 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
                      ) AS occupancyRate
     from movies m
     join showtimes st on m.id= st.movie_id
+            join rooms r on r.id = st.room_id
     join booking_detail bd on bd.showtime_id = st.id
     join bookings b on bd.booking_id = b.id
     join tickets t on t.booking_id = b.id

@@ -41,8 +41,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query(value = "update Booking b set b.status = :status where b.id in :bookingIds")
     void updateStatusByIdIn(@Param("status") BookingStatus status, @Param("bookingIds") List<Long> ids);
 
-    @Query(value = "select b from Booking b left join b.customer c left join c.user u where b.bookingCode like concat('%', :q, '%') or u.phone like concat('%', :q, '%') or c.identityCard like concat('%', :q, '%')", countQuery = "select count(b) from Booking b join b.customer c join c.user u where b.bookingCode like concat('%', :q, '%') or u.phone like concat('%', :q, '%') or c.identityCard like concat('%', :q, '%')")
-    Page<Booking> fetchAllWithPagination(@Param("q") String q, Pageable pageable);
+    @Query(value = "select b from Booking b left join b.customer c left join c.user u where (b.bookingCode like concat('%', :q, '%') or u.phone like concat('%', :q, '%') or c.identityCard like concat('%', :q, '%')) and (:status is null or b.status = :status) order by :sortBy desc", countQuery = "select count(b) from Booking b join b.customer c join c.user u where (b.bookingCode like concat('%', :q, '%') or u.phone like concat('%', :q, '%') or c.identityCard like concat('%', :q, '%')) and (:status is null or b.status = :status) order by :sortBy desc")
+    Page<Booking> fetchAllWithPagination(@Param("q") String q, @Param("status") BookingStatus status,@Param("sortBy") String sortBy , Pageable pageable);
 
     @Query(value = """
             select b.id as id, b.createdBy as createdBy, b.createdDate as createdDate,
@@ -88,7 +88,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query(value = """
     select\s
         	count(t0.id) as totalTicketsSold
-        	, (	select sum(r3.total_seats) from rooms r3) as totalCapacity
+        	, (	select sum(r3.total_seats) from rooms r3) as totalRoomSeats
     
         	, round(
         		count(distinct t0.id) * 100.0

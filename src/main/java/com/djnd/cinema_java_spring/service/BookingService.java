@@ -626,12 +626,12 @@ public class BookingService {
     }
 
     @Transactional(readOnly = true)
-    public ResultPaginationDTO getAllBookingWithPagination(Pageable pageable, String q) {
+    public ResultPaginationDTO getAllBookingWithPagination(Pageable pageable, String q, BookingStatus status, String sortBy) {
         var res = new ResultPaginationDTO();
         var meta = new ResultPaginationDTO.Meta();
         meta.setPage(pageable.getPageNumber() + 1);
         meta.setPageSize(pageable.getPageSize());
-        Page<Booking> page = bookingRepository.fetchAllWithPagination(q != null ? q : "", pageable);
+        Page<Booking> page = bookingRepository.fetchAllWithPagination(q != null ? q : "",status, sortBy,  pageable);
         meta.setPage(page.getTotalPages());
         meta.setTotal(page.getTotalElements());
         res.setMeta(meta);
