@@ -13,7 +13,7 @@ public class SeatCoordinatesDTO {
     private double x;
     private double y;
     private double z;
-
+    // calculate seat coordinates
     public static SeatCoordinatesDTO calculate3DPosition(String seatCode, int totalColumns) {
         String rowLetter = seatCode.replaceAll("[^A-Za-z]", "");
         int colNum = Integer.parseInt(seatCode.replaceAll("[^0-9]", ""));
