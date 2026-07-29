@@ -10,7 +10,7 @@ public record MovieDetailsResponse(
                 Integer id,
                 String title,
                 String description,
-                Integer durationMunutes,
+                Integer durationMinutes,
                 MovieGenre genre,
                 LocalDateTime releaseDate,
                 String posterUrl,
