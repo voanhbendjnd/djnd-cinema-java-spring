@@ -26,12 +26,12 @@ public record CustomUserDetails(UserSecurityCacheDTO user) implements UserDetail
         return authoritySet;
 
     }
-
+    // get password for security check login
     @Override
     public String getPassword() {
         return user.getPassword();
     }
-
+    // get username for security check
     @Override
     public String getUsername() {
         if (user.getLogin() != null) {
