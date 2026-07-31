@@ -1,2 +1,2 @@
 // develop - master
-// production-v1 - for public deloy
+// production-v1 - for public
