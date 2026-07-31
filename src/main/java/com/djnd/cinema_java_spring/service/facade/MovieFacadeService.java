@@ -15,7 +15,7 @@ import com.djnd.cinema_java_spring.domain.enumeration.MovieGenre;
 import com.djnd.cinema_java_spring.domain.enumeration.MovieStatus;
 import com.djnd.cinema_java_spring.repository.MovieRepository;
 import com.djnd.cinema_java_spring.repository.ShowtimeRepository;
-import com.djnd.cinema_java_spring.service.FileService;
+import com.djnd.cinema_java_spring.service.StorePosterService;
 import com.djnd.cinema_java_spring.service.MovieDbService;
 import com.djnd.cinema_java_spring.service.ShowtimeService;
 import com.djnd.cinema_java_spring.service.dto.AdminMovieDTO;
@@ -33,7 +33,7 @@ import lombok.experimental.FieldDefaults;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class MovieFacadeService {
-    final FileService fileService;
+    final StorePosterService storePosterService;
     final MovieDbService movieDbService;
     final MovieRepository movieRepository;
     final ShowtimeService showtimeService;
@@ -59,8 +59,7 @@ public class MovieFacadeService {
         if (movieDTO.getStatus().equals(MovieStatus.SHOWING.toString()) && movieDTO.getRooms() != null) {
             showtimeService.createComplexShowtimes(movieDTO);
         }
-        var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(), FileService.moviePoster);
-        movieSaved.setPosterUrl(posterUrlMoved);
+        movieSaved.setPosterUrl(movieDTO.getPosterUrl());
         return this.toAdminMovieDTO(movieSaved);
     }
 
@@ -104,9 +103,7 @@ public class MovieFacadeService {
         }
         if (movieDTO.getPosterUrl() != null) {
             if (!movie.getPosterUrl().equalsIgnoreCase(movieDTO.getPosterUrl())) {
-                var posterUrlMoved = fileService.moveSaveFromTempToOther(movieDTO.getPosterUrl(),
-                        FileService.moviePoster);
-                movie.setPosterUrl(posterUrlMoved);
+                movie.setPosterUrl(movieDTO.getPosterUrl());
             }
 
             // movieRepository.save(movie);
@@ -150,7 +147,7 @@ public class MovieFacadeService {
     }
 
     public String saveTempFile(MultipartFile file) throws URISyntaxException, IOException {
-        return fileService.getNameFileAtTemp(file);
+        return storePosterService.uploadToCloudinary(file, "movie-posters").getSecureUrl();
     }
 
     public AdminMovieDTO fetchById(Integer id) {

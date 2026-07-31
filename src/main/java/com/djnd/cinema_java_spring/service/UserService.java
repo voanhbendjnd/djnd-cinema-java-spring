@@ -52,14 +52,15 @@ public class UserService {
     final PasswordEncoder passwordEncoder;
     final RoleRepository roleRepository;
     final CustomerService customerService;
-    final FileService fileService;
+    final StorePosterService storePosterService;
 
     public void changeAvatarAccount(MultipartFile file) throws IOException, URISyntaxException {
         Long userId = SecurityUtils.getCurrentUserIdOrNull();
         if (userId == null) {
             throw new UnauthorizedException("You are not logged in!");
         }
-        String fileName = fileService.getNameAvatarUrl(file);
+        var result = storePosterService.uploadToCloudinary(file, "user-avatars");
+        String fileName = result.getSecureUrl();
         int updated = userRepository.updateAvatarUser(userId, fileName);
         if (updated <= 0) {
             throw new ResourceNotFoundException("User not found!");
