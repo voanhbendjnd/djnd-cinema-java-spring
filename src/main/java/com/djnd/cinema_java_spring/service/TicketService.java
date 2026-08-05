@@ -55,13 +55,17 @@ public class TicketService {
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found!"));
         LocalDateTime currentDate = LocalDateTime.now();
         LocalDateTime startShowtimeMovie = currentTicket.getShowtime().getStartDateTime();
-        if (currentDate.isBefore(startShowtimeMovie)) {
-            throw new RequestInvalidException("Showtime already showing cannot operation!");
+        if (startShowtimeMovie.isBefore(currentDate)) {
+            throw new RequestInvalidException("Ticket outdate!");
+        }
+        String customerEmail = null;
+        if(currentTicket.getBooking().getCustomer() != null){
+            customerEmail = currentTicket.getBooking().getCustomer().getUser().getEmail();
         }
         return TicketRefundInfoDTO.builder()
                 .bookingCode(currentTicket.getBooking().getBookingCode())
                 .seatPosition(currentTicket.getSeat().getSeatRow() + currentTicket.getSeat().getSeatNo())
-                .customerEmail(currentTicket.getBooking().getCustomer().getUser().getEmail())
+                .customerEmail(customerEmail)
                 .ticketCode(currentTicket.getCode())
                 .originalAmount(currentTicket.getPrice())
                 .refundAmount(currentTicket.getPrice())

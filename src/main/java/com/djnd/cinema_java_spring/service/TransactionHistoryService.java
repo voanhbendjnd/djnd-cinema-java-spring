@@ -39,8 +39,8 @@ public class TransactionHistoryService {
     public void refundForCustomer(TransactionHistoryDTO transactionHistoryDTO) {
         BigDecimal amountRefund= transactionHistoryRepository.getAmountWithActionAndTicketId(TransactionAction.IN.toString(),transactionHistoryDTO.getTicketId()).orElseThrow(()-> new ResourceNotFoundException("Amount with ticket not found!"));
         Ticket currentTicket = ticketRepository.findWithDetailBookingById(transactionHistoryDTO.getTicketId()).orElseThrow(()-> new ResourceNotFoundException("Ticket not found!"));
-        if(LocalDateTime.now().isBefore(currentTicket.getShowtime().getStartDateTime())){
-            throw new RequestInvalidException("Showtime already showing cannot operation!");
+        if(LocalDateTime.now().isAfter(currentTicket.getShowtime().getStartDateTime())){
+            throw new RequestInvalidException("Ticket outdate!");
         }
         this.processDeleteTicketAndChangeStatusBooking(currentTicket);
             Map<Long, BigDecimal> ticketPriceMap = new HashMap<>();

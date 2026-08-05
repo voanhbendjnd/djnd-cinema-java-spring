@@ -12,6 +12,6 @@ import java.util.Optional;
 
 @Repository
 public interface TransactionHistoryRepository extends JpaRepository<TransactionHistory, Long> {
-    @Query(value = "select th.amount from TransactionHistory th where th.action = :action and th.ticketId = ticketId")
+    @Query(value = "select th.amount from TransactionHistory th where th.action = :action and th.ticketId = :ticketId")
    Optional< BigDecimal> getAmountWithActionAndTicketId(@Param("action") String action, @Param("ticketId") Long ticketId);
 }
