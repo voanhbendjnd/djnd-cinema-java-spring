@@ -16,6 +16,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+// 2025-07-20: Service quản lý Customer entity
+// Chức năng: Lưu trữ thông tin khách hàng, quản lý cache thông tin tài khoản
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
@@ -24,14 +26,15 @@ public class CustomerService {
     final CustomerRepository customerRepository;
     final CacheManager cacheManager;
 
+    // 2025-07-20: Lưu thông tin khách hàng khi đăng ký
     public void saveCustomerRegister(User user) {
         Customer customer = new Customer();
         customer.setUser(user);
         customerRepository.save(customer);
     }
 
+    // 2025-07-20: Lấy thông tin tài khoản khách hàng hiện tại
     @Transactional(readOnly = true)
-
     public AccountCustomerProjection getInformationAccount() {
         Long userId = SecurityUtils.getCurrentUserIdOrNull();
         if (userId == null) {
@@ -42,6 +45,8 @@ public class CustomerService {
         return currentUser;
     }
 
+    // 2025-07-20: Xóa cache thông tin khách hàng theo userId
+    // Xóa cache thủ công qua CacheManager để đảm bảo loyalty points được cập nhật
     public void clearCacheCustomer(Long userId) {
         var cache = cacheManager.getCache(CustomerRepository.CACHE_INFORMATION_ACCOUNT_BY_USER_ID);
         if (cache != null) {

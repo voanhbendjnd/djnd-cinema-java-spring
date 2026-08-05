@@ -125,16 +125,16 @@ public class MovieFacadeService {
         return movieRepository.getPublishMovie(MovieStatus.SHOWING);
     }
 
-    @Transactional(readOnly = true)
-    public List<PublishMovieProjection> getPublishMoviesByStatus(String statusParam) {
-        if (statusParam.equalsIgnoreCase(MovieStatus.SHOWING.toString())) {
-            return movieRepository.getPublishMovie(MovieStatus.SHOWING);
-        } else {
-            return movieRepository.getPublishMovie(MovieStatus.UPCOMING);
-
-        }
-
-    }
+//    @Transactional(readOnly = true)
+//    public List<PublishMovieProjection> getPublishMoviesByStatus(String statusParam) {
+//        if (statusParam.equalsIgnoreCase(MovieStatus.SHOWING.toString())) {
+//            return movieRepository.getPublishMovie(MovieStatus.SHOWING);
+//        } else {
+//            return movieRepository.getPublishMovie(MovieStatus.UPCOMING);
+//
+//        }
+//
+//    }
 
     public ResultPaginationDTO getAllMovieWithPagination(Pageable pageable, String q) {
         var res = new ResultPaginationDTO();
@@ -177,6 +177,23 @@ public class MovieFacadeService {
                 .status(movie.getStatus().toString())
                 .posterUrl(movie.getPosterUrl())
                 .title(movie.getTitle()).build();
+    }
+    // 20/7
+    @Transactional(readOnly = true)
+    public List<PublishMovieProjection> getPublishMoviesByStatus(String statusParam) {
+        if (statusParam == null || statusParam.isBlank()) {
+            // Trả về tất cả phim SHOWING và UPCOMING
+            List<PublishMovieProjection> result = new java.util.ArrayList<>();
+            result.addAll(movieRepository.getPublishMovie(MovieStatus.SHOWING));
+            result.addAll(movieRepository.getPublishMovie(MovieStatus.UPCOMING));
+            return result;
+        }
+        try {
+            MovieStatus status = MovieStatus.valueOf(statusParam.toUpperCase());
+            return movieRepository.getPublishMovie(status);
+        } catch (IllegalArgumentException e) {
+            return movieRepository.getPublishMovie(MovieStatus.SHOWING);
+        }
     }
 
 }

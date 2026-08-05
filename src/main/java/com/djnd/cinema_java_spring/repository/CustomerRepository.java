@@ -13,10 +13,14 @@ import org.springframework.stereotype.Repository;
 import com.djnd.cinema_java_spring.domain.entity.Customer;
 import com.djnd.cinema_java_spring.service.projection.AccountCustomerProjection;
 
+// 2025-07-20: Repository quản lý Customer entity
+// Chức năng: Lưu trữ thông tin khách hàng, cache thông tin tài khoản
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
     public static final String CACHE_INFORMATION_ACCOUNT_BY_USER_ID = "inforByUserId";
 
+    // 2025-07-20: Lấy thông tin tài khoản khách hàng với cache
+    // Cache key: userId
     @Cacheable(cacheNames = CACHE_INFORMATION_ACCOUNT_BY_USER_ID, unless = "#result == null")
     @Query("""
             select new com.djnd.cinema_java_spring.service.projection.AccountCustomerProjection(
@@ -43,7 +47,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             """)
     Optional<AccountCustomerProjection> getInformationProfileUserById(@Param("userId") Long userId);
 
-    @Query(value = "select exists(select 1 from Customer c where c.id = :customerId)")
+    @Query(value = "select exists(select 1 from Customer c where c.userId = :customerId)")
     boolean existByCustomerId(@Param("customerId") Long customerId);
     @Query(value = "select c from Customer c join c.user u where u.email = :email")
     Optional<Customer> findOneByEmail(@Param("email") String email);

@@ -86,7 +86,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     TodayMetricsProjection getTodayRevenue();
 
     @Query(value = """
-    select\s
+    select
         	count(t0.id) as totalTicketsSold
         	, (	select sum(r3.total_seats) from rooms r3) as totalRoomSeats
     
@@ -94,7 +94,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         		count(distinct t0.id) * 100.0
         		/ nullif(
         		(
-        		select\s
+        		select
         			sum(r2.total_seats)
         			from rooms r2
         		)
@@ -102,15 +102,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         		,0)
     
         	) as overallOccupancyRate
-        from\s
+        from
         	showtimes st0
         join
         	tickets t0
-        on\s
+        on
         	t0.showtime_id = st0.id
-        join\s
+        join
         	bookings b0
-     	on\s
+     	on
      		b0.id = t0.booking_id
      	where
      		b0.created_date >= :fromDate 

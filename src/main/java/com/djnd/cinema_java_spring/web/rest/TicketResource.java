@@ -1,16 +1,21 @@
 package com.djnd.cinema_java_spring.web.rest;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import com.djnd.cinema_java_spring.service.dto.TicketRefundInfoDTO;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.djnd.cinema_java_spring.domain.enumeration.BookingStatus;
+import com.djnd.cinema_java_spring.domain.enumeration.SeatType;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.service.TicketService;
 import com.djnd.cinema_java_spring.service.dto.ResultPaginationDTO;
@@ -54,6 +59,7 @@ public class TicketResource {
         return ResponseEntity.ok(ticketService.getTicketByBookingId(bookingId));
 
     }
+
     @GetMapping("/tickets/{id}/refund-info")
     @ApiMessage("Get ticket refund information")
     @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.STAFF + "','" + AuthoritiesConstants.ADMIN + "', '"
@@ -62,4 +68,17 @@ public class TicketResource {
         return ResponseEntity.ok(ticketService.getTicketRefundInfo(ticketId));
     }
 
+    @GetMapping("/admin/tickets")
+    @ApiMessage("Get all tickets for admin with pagination and filters")
+    @PreAuthorize("hasAnyAuthority('" + AuthoritiesConstants.ADMIN + "','" + AuthoritiesConstants.MANAGER + "')")
+    public ResponseEntity<ResultPaginationDTO> getAllTicketForAdmin(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) SeatType seatType,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) BookingStatus bookingStatus,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) @RequestParam(required = false) LocalDate releaseDate,
+            Pageable pageable) {
+        return ResponseEntity.ok(ticketService.getAllTicketForAdmin(q, seatType, paymentMethod, bookingStatus,
+                releaseDate, pageable));
+    }
 }

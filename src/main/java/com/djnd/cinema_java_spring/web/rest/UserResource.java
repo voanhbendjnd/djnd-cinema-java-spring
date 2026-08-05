@@ -122,6 +122,15 @@ public class UserResource {
         return ResponseEntity.ok(userService.getUserAdmin(userId));
     }
 
+    @GetMapping("/customers/{id}")
+    @ApiMessage("Get customer by ID")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")")
+    public ResponseEntity<com.djnd.cinema_java_spring.service.dto.CustomerAdminDTO> getCustomerById(@Positive @PathVariable("id") Long userId) {
+        if (userId == null)
+            throw new RequestInvalidException("User ID missing!");
+        return ResponseEntity.ok(userService.getCustomerAdmin(userId));
+    }
+
     @DeleteMapping("/users/{login}")
     @ApiMessage("Delete user by login")
     @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.ADMIN + "\")") // get from security context

@@ -37,4 +37,14 @@ public class TicketDTO {
     String cashBy;
     String ticketCode;
     BigDecimal price;
+    Long bookingId;
+    String bookingCode;
+    String bookingStatus;
+    Long customerId;
+    String customerLogin;
+    String customerName;
+    String customerPhone;
+    String customerIdentityCard;
+    Integer roomId;
+    String roomType;
 }

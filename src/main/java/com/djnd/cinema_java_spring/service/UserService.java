@@ -104,6 +104,29 @@ public class UserService {
         return userDTO;
     }
 
+    @Transactional(readOnly = true)
+    public com.djnd.cinema_java_spring.service.dto.CustomerAdminDTO getCustomerAdmin(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        com.djnd.cinema_java_spring.service.dto.CustomerAdminDTO dto = new com.djnd.cinema_java_spring.service.dto.CustomerAdminDTO();
+        dto.setId(user.getId());
+        dto.setLogin(user.getLogin());
+        dto.setName(user.getName());
+        dto.setEmail(user.getEmail());
+        dto.setPhone(user.getPhone());
+        dto.setGender(user.getGender().toString());
+        dto.setActivated(user.isActivated());
+        dto.setCreatedDate(user.getCreatedDate());
+        dto.setCreatedBy(user.getCreatedBy());
+        dto.setLastModifiedDate(user.getLastModifiedDate());
+        dto.setLastModifiedBy(user.getLastModifiedBy());
+        if (user.getCustomer() != null) {
+            dto.setAddress(user.getCustomer().getAddress());
+            dto.setIdentityCard(user.getCustomer().getIdentityCard());
+            dto.setLoyaltyPoints(user.getCustomer().getLoyaltyPoints());
+        }
+        return dto;
+    }
+
     public AdminUserDTO registerUser(AdminUserDTO userDTO, String password) {
         userRepository.findOneByLogin(userDTO.getLogin().toLowerCase()).ifPresent(existingUser -> {
             boolean removed = this.removeNoneActivatedUser(existingUser);

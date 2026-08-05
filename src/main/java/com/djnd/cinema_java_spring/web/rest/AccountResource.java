@@ -24,8 +24,11 @@ import com.djnd.cinema_java_spring.repository.UserRepository;
 import com.djnd.cinema_java_spring.security.AuthoritiesConstants;
 import com.djnd.cinema_java_spring.security.SecurityUtils;
 import com.djnd.cinema_java_spring.service.CustomerService;
+import com.djnd.cinema_java_spring.service.LoyaltyWalletService;
 import com.djnd.cinema_java_spring.service.MailService;
 import com.djnd.cinema_java_spring.service.UserService;
+import com.djnd.cinema_java_spring.service.dto.PointHistoryDTO;
+import java.util.List;
 import com.djnd.cinema_java_spring.service.dto.AdminUserDTO;
 import com.djnd.cinema_java_spring.service.dto.CustomerUserDTO;
 import com.djnd.cinema_java_spring.service.dto.PasswordChangeDTO;
@@ -52,6 +55,7 @@ public class AccountResource {
     final MailService mailService;
     final UserRepository userRepository;
     final CustomerService customerService;
+    final LoyaltyWalletService loyaltyWalletService;
 
     private static class AccountResourceException extends ErrorResponseException {
         private AccountResourceException(String message) {
@@ -110,6 +114,32 @@ public class AccountResource {
         return ResponseEntity.ok(customerService.getInformationAccount());
     }
 
+    @GetMapping("/point-history")
+    @ApiMessage("Get point history of current user")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+    public ResponseEntity<List<PointHistoryDTO>> getPointHistory() {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new UnauthorizedException("You are not logged in!");
+        }
+        return ResponseEntity.ok(loyaltyWalletService.getPointHistory(userId));
+    }
+
+    // 2025-07-20: Tính lại loyalty points từ lịch sử giao dịch
+    // Chức năng: Tính toán lại điểm loyalty dựa trên tổng EARN - tổng SPEND từ lịch sử
+    // Endpoint: POST /api/v1/account/recalculate-points
+    @PostMapping("/recalculate-points")
+    @ApiMessage("Recalculate loyalty points from history")
+    @PreAuthorize("hasAuthority(\"" + AuthoritiesConstants.CUSTOMER + "\")")
+    public ResponseEntity<Integer> recalculateLoyaltyPoints() {
+        Long userId = SecurityUtils.getCurrentUserIdOrNull();
+        if (userId == null) {
+            throw new UnauthorizedException("You are not logged in!");
+        }
+        Integer recalculatedPoints = loyaltyWalletService.recalculateLoyaltyPointsFromHistory(userId);
+        return ResponseEntity.ok(recalculatedPoints);
+    }
+
     @PostMapping("/register")
     @ApiMessage("User register account")
     public ResponseEntity<AdminUserDTO> registerAccount(@Valid @RequestBody ManagedUserVM dto) {
@@ -124,14 +154,7 @@ public class AccountResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
-    /**
-     * 
-     * @param name
-     * @param email
-     * @param langKey
-     * @param gender
-     * @return
-     */
+
     @PostMapping
     @ApiMessage("Update info account")
     public ResponseEntity<Void> updateAccount(@Valid @RequestBody AdminUserDTO userDTO) {

@@ -47,41 +47,44 @@ public interface MovieRepository extends JpaRepository<Movie, Integer> {
 
     @Query(value = """
 
-            select distinct m.id as movieId, m.title as movieTitle, m.poster_url as posterUrl
-    , sum(b.total_amount) as totalRevenue
-    , count(t.id) as ticketsSold
-    , (select count(st1.id) from showtimes st1 where st1.movie_id = m.id and st1.status = 'ACTIVE') as totalShowtimes
-                ,ROUND(
-                         COUNT(DISTINCT t.id) * 100.0 /
-                         NULLIF(
-                             (
-                                 SELECT SUM(seat_count)
-                                 FROM (
-                                     SELECT 
-                                            COUNT(s.id) AS seat_count
-                                     FROM showtimes st2
-                                     JOIN rooms r ON r.id = st2.room_id
-                                     JOIN seats s ON s.room_id = r.id
-                                     WHERE st2.movie_id = m.id
-                                     GROUP BY st2.id
-                                 ) as x
-                             ),
-                             0
-                         ),
-                         2
-                     ) AS occupancyRate
-    from movies m
-    join showtimes st on m.id= st.movie_id
-            join rooms r on r.id = st.room_id
-    join booking_detail bd on bd.showtime_id = st.id
-    join bookings b on bd.booking_id = b.id
-    join tickets t on t.booking_id = b.id
-    where
-    b.created_date >= :fromDateTime and b.created_date < :toDateTime
-    and m.status = 'SHOWING'
-    group by m.id, m.title, m.poster_url
-    order by totalRevenue desc
-    limit :limit
-    """, nativeQuery = true)
-    List<OccupancyMovieDetailProjection> getTopPerformingMovies(@Param("fromDateTime")LocalDateTime fromDateTime, @Param("toDateTime") LocalDateTime toDateTime, @Param("limit") int limit);
+                    select distinct m.id as movieId, m.title as movieTitle, m.poster_url as posterUrl
+            , sum(t.price) as totalRevenue
+            , count(distinct t.id) as ticketsSold
+            , (select count(st1.id) from showtimes st1 where st1.movie_id = m.id and st1.status = 'ACTIVE') as totalShowtimes
+                        ,ROUND(
+                                 COUNT(DISTINCT t.id) * 100.0 /
+                                 NULLIF(
+                                     (
+                                         SELECT SUM(seat_count)
+                                         FROM (
+                                             SELECT
+                                                    COUNT(s.id) AS seat_count
+                                             FROM showtimes st2
+                                             JOIN rooms r ON r.id = st2.room_id
+                                             JOIN seats s ON s.room_id = r.id
+                                             WHERE st2.movie_id = m.id
+                                             GROUP BY st2.id
+                                         ) as x
+                                     ),
+                                     0
+                                 ),
+                                 2
+                             ) AS occupancyRate
+            from movies m
+            join showtimes st on m.id= st.movie_id
+                    join rooms r on r.id = st.room_id
+            join tickets t on st.id = t.showtime_id
+            join bookings b on t.booking_id = b.id
+            where
+            b.created_date >= :fromDateTime and b.created_date < :toDateTime
+            and m.status = 'SHOWING'
+            group by m.id, m.title, m.poster_url
+            order by totalRevenue desc
+            limit :limit
+            """, nativeQuery = true)
+    List<OccupancyMovieDetailProjection> getTopPerformingMovies(@Param("fromDateTime") LocalDateTime fromDateTime,
+            @Param("toDateTime") LocalDateTime toDateTime, @Param("limit") int limit);
+
+    @Query("select m from Movie m where m.status = :status and m.activated = true order by m.sold desc")
+    List<Movie> findTopSellingMovies(@Param("status") MovieStatus status, Pageable pageable);
 }
