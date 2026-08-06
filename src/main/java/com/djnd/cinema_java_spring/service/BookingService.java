@@ -574,7 +574,7 @@ public class BookingService {
             // add loyalties
             Customer customerByBooking = booking.getCustomer();
             if(customerByBooking != null){
-                loyaltyWalletService.handleEarnPointCustomer(customerByBooking, vnpTotalAmount.intValue());
+                loyaltyWalletService.handleEarnPointCustomer(customerByBooking, vnpTotalAmount.intValue() / 100);
             }
 
 

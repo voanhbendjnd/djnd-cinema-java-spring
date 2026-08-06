@@ -27,4 +27,15 @@ public class MovieFallbackService {
                         m.getGenre() != null ? m.getGenre().name() : null))
                 .toList();
     }
+
+    public List<MovieSuggestionDTO> getShowingMovies() {
+        return movieRepository
+                .getPublishMovie(MovieStatus.SHOWING)
+                .stream()
+                .map(m -> new MovieSuggestionDTO(
+                        m.getId(),
+                        m.getTitle(),
+                        m.getGenre() != null ? m.getGenre().name() : null))
+                .toList();
+    }
 }

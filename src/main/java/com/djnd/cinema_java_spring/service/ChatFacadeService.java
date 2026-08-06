@@ -40,9 +40,18 @@ public class ChatFacadeService {
         ChatSession session = sessionManager.getOrCreate(request.getSessionId());
         session.appendMessage(new ChatMessageDTO("user", request.getMessage()));
 
+        List<MovieSuggestionDTO> showingMovies;
+        try {
+            showingMovies = fallbackService.getShowingMovies();
+        } catch (Exception ex) {
+            log.warn("[Chatbot] Failed to load showing movies, proceeding without movie context: {}",
+                    ex.getMessage());
+            showingMovies = List.of();
+        }
+
         try {
             String reply = groqService
-                    .askAsync(request.getMessage(), session.getHistorySnapshot())
+                    .askAsync(request.getMessage(), session.getHistorySnapshot(), showingMovies)
                     .get(GROQ_TIMEOUT_SECONDS, TimeUnit.SECONDS);
 
             session.appendMessage(new ChatMessageDTO("assistant", reply));

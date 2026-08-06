@@ -91,14 +91,14 @@ public class StatisticService {
             assert occupancyProjection != null;
             totalLabelCell.setCellValue(occupancyProjection.getTotalTicketsSold() != null ? occupancyProjection.getTotalTicketsSold().toString() : "0");
             totalCapCell.setCellStyle(boldStyle);
-            Cell overallRateCell = totalRow.createCell(3);
-            if(occupancyProjection.getTotalTicketsSold() != null) {
-                overallRateCell.setCellValue(occupancyProjection.getTotalTicketsSold().toString());
-            }
-            else{
-                overallRateCell.setCellValue("0");
-            }
-            overallRateCell.setCellStyle(boldStyle);
+//            Cell overallRateCell = totalRow.createCell(3);
+//            if(occupancyProjection.getTotalTicketsSold() != null) {
+//                overallRateCell.setCellValue(occupancyProjection.getTotalTicketsSold().toString());
+//            }
+//            else{
+//                overallRateCell.setCellValue("0");
+//            }
+//            overallRateCell.setCellStyle(boldStyle);
             for(int i = 0; i< headers.length; i++){
                 sheet.autoSizeColumn(i);
             }

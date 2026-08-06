@@ -16,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 import com.djnd.cinema_java_spring.service.dto.ChatMessageDTO;
 import com.djnd.cinema_java_spring.service.dto.GroqChatCompletionRequest;
 import com.djnd.cinema_java_spring.service.dto.GroqChatCompletionResponse;
+import com.djnd.cinema_java_spring.service.dto.MovieSuggestionDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,11 +32,17 @@ public class GroqService {
     private static final Logger log = LoggerFactory.getLogger(GroqService.class);
     private static final String GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-    private static final String SYSTEM_PROMPT = """
+    private static final String SYSTEM_PROMPT_TEMPLATE = """
             Bạn là trợ lý rạp phim thông minh của CineMate.
             Hãy trả lời câu hỏi của người dùng về phim ảnh một cách ngắn gọn, thân thiện, bằng tiếng Việt.
             Nếu người dùng hỏi gợi ý phim, hãy đề xuất 2-3 phim phù hợp và hỏi lại họ để hiểu rõ sở thích hơn.
             Không bịa thông tin về suất chiếu, giá vé, hoặc lịch chiếu cụ thể nếu không chắc chắn.
+
+            Dưới đây là danh sách phim ĐANG CHIẾU thật tại rạp (định dạng: Tên phim - Thể loại).
+            CHỈ được gợi ý phim nằm trong danh sách này, TUYỆT ĐỐI không tự bịa ra tên phim khác.
+            Nếu không có phim nào trong danh sách phù hợp với yêu cầu của người dùng,
+            hãy nói rõ là hiện tại rạp chưa có phim phù hợp, đừng cố gợi ý đại một cái tên.
+            %s
             """;
 
     private final RestTemplate chatbotRestTemplate;
@@ -47,14 +54,17 @@ public class GroqService {
     private String model;
 
     @Async("chatbotExecutor")
-    public CompletableFuture<String> askAsync(String userMessage, List<ChatMessageDTO> history) {
+    public CompletableFuture<String> askAsync(
+            String userMessage, List<ChatMessageDTO> history, List<MovieSuggestionDTO> showingMovies) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(apiKey);
 
+            String systemPrompt = SYSTEM_PROMPT_TEMPLATE.formatted(formatMovieList(showingMovies));
+
             GroqChatCompletionRequest requestBody = new GroqChatCompletionRequest(
-                    model, SYSTEM_PROMPT, history, userMessage);
+                    model, systemPrompt, history, userMessage);
             HttpEntity<GroqChatCompletionRequest> entity = new HttpEntity<>(requestBody, headers);
 
             GroqChatCompletionResponse response = chatbotRestTemplate.postForObject(
@@ -69,5 +79,19 @@ public class GroqService {
             log.warn("[Chatbot] Groq call failed: {}", ex.getMessage());
             return CompletableFuture.failedFuture(ex);
         }
+    }
+
+    private String formatMovieList(List<MovieSuggestionDTO> movies) {
+        if (movies == null || movies.isEmpty()) {
+            return "(Hiện tại rạp không có phim nào đang chiếu.)";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (MovieSuggestionDTO m : movies) {
+            sb.append("- ")
+                    .append(m.getTitle())
+                    .append(m.getGenre() != null ? " (" + m.getGenre() + ")" : "")
+                    .append("\n");
+        }
+        return sb.toString();
     }
 }
